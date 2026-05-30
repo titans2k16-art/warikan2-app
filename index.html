@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>居酒屋割り勘アプリ</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f3f4f6;
+      color: #333;
+      margin: 0;
+      padding: 16px;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 20px;
+      text-align: center;
+      color: #ff6b6b;
+      margin-top: 0;
+    }
+    .section {
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      border-bottom: 2px solid #ff6b6b;
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+    }
+    .dummy-box {
+      background-color: #f8f9fa;
+      border: 1px dashed #ccc;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      color: #888;
+      font-size: 14px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      background-color: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🍻 居酒屋割り勘アプリ</h1>
+
+    <div class="section">
+      <div class="section-title">1. メンバー</div>
+      <div class="dummy-box">Aさん, Bさん, Cさん (追加ボタンなどが入ります)</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">2. レシート読み込み</div>
+      <div class="dummy-box">📸 カメラを起動するボタンが入ります</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">3. 仕分け（ごはん / 飲み物）</div>
+      <div class="dummy-box">読み込んだ品物リストと、誰の飲み物か選ぶ画面が入ります</div>
+    </div>
+
+    <button class="btn">割り勘を計算する</button>
+  </div>
+
+</body>
+</html>
