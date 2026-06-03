@@ -23,7 +23,7 @@
     h1 {
       font-size: 20px;
       text-align: center;
-      color: #ff6b6b;
+      color: #0056b3; /* ちょっとシックな青色に変更してみました */
       margin-top: 0;
     }
     .section {
@@ -32,9 +32,54 @@
     .section-title {
       font-size: 16px;
       font-weight: bold;
-      border-bottom: 2px solid #ff6b6b;
+      border-bottom: 2px solid #0056b3;
       padding-bottom: 4px;
       margin-bottom: 12px;
+    }
+    /* 追加：入力フォームのスタイル */
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .input-group input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    .input-group button {
+      background-color: #0056b3;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0 16px;
+      font-weight: bold;
+    }
+    /* 追加：メンバーリストのスタイル */
+    .member-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .member-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #f8f9fa;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+    .delete-btn {
+      color: #ff4d4f;
+      background: none;
+      border: none;
+      font-size: 20px;
+      line-height: 1;
+      padding: 0 4px;
     }
     .dummy-box {
       background-color: #f8f9fa;
@@ -48,7 +93,7 @@
     .btn {
       display: block;
       width: 100%;
-      background-color: #ff6b6b;
+      background-color: #0056b3;
       color: white;
       border: none;
       border-radius: 8px;
@@ -65,8 +110,12 @@
     <h1>🍻 居酒屋割り勘アプリ</h1>
 
     <div class="section">
-      <div class="section-title">1. メンバー</div>
-      <div class="dummy-box">Aさん, Bさん, Cさん (追加ボタンなどが入ります)</div>
+      <div class="section-title">1. メンバー登録</div>
+      <div class="input-group">
+        <input type="text" id="memberName" placeholder="名前（例：山田）">
+        <button onclick="addMember()">追加</button>
+      </div>
+      <ul class="member-list" id="memberList"></ul>
     </div>
 
     <div class="section">
@@ -81,6 +130,45 @@
 
     <button class="btn">割り勘を計算する</button>
   </div>
+
+  <script>
+    // メンバーの名前を保存する「箱（配列）」を用意
+    let members = [];
+
+    // 追加ボタンが押された時の処理
+    function addMember() {
+      const input = document.getElementById('memberName');
+      const name = input.value.trim(); // 入力された文字を取得
+
+      if (name !== "") {
+        members.push(name); // 箱に名前を追加
+        input.value = ""; // 入力欄を空にする
+        updateList(); // 画面を更新する
+      }
+    }
+
+    // 削除（×）ボタンが押された時の処理
+    function deleteMember(index) {
+      members.splice(index, 1); // 箱から指定した名前を削る
+      updateList(); // 画面を更新する
+    }
+
+    // 画面のリストを最新状態に書き換える処理
+    function updateList() {
+      const list = document.getElementById('memberList');
+      list.innerHTML = ""; // 一度リストをリセット
+
+      // 箱の中身を順番に取り出して、HTMLとして画面にくっつける
+      members.forEach((name, index) => {
+        list.innerHTML += `
+          <li>
+            ${name}
+            <button class="delete-btn" onclick="deleteMember(${index})">×</button>
+          </li>
+        `;
+      });
+    }
+  </script>
 
 </body>
 </html>
