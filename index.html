@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>居酒屋割り勘アプリ</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -91,6 +92,17 @@
       margin-bottom: 6px;
       font-size: 14px;
     }
+    
+    /* ★追加：傾斜設定用のセレクトボックススタイル★ */
+    .weight-select {
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 12px;
+      background-color: #fff;
+      margin-right: 8px;
+    }
+
     .delete-btn {
       color: #ff4d4f;
       background: none;
@@ -175,6 +187,12 @@
       background-color: #6c757d;
       margin-top: 0;
     }
+    /* スクショ用ボタンの色 */
+    .btn-screenshot {
+      background-color: #28a745; 
+      margin-top: 12px;
+    }
+    
     #imagePreviewArea {
       display: none;
       text-align: center;
@@ -209,11 +227,21 @@
       font-size: 12px;
       color: #666;
     }
+    /* ★追加：結果の総合計表示用スタイル★ */
+    .result-summary {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 2px dashed #ff6b6b;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      color: #d9534f;
+    }
   </style>
 </head>
 <body>
 
-  <div class="container">
+  <div class="container" id="appContainer">
     <h1>🍻 居酒屋割り勘アプリ</h1>
 
     <div class="settings-area">
@@ -224,7 +252,7 @@
     </div>
 
     <div class="section">
-      <div class="section-title">1. メンバー登録</div>
+      <div class="section-title">1. メンバー登録 ＆ 傾斜設定</div>
       <div class="input-group">
         <input type="text" id="memberName" placeholder="名前（例：山田）">
         <button onclick="addMember()">追加</button>
@@ -236,7 +264,7 @@
       <div class="section-title">2. レシート仕分け</div>
       
       <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(event)">
-      <button class="btn btn-secondary" onclick="document.getElementById('cameraInput').click()" style="margin-bottom: 12px;">📸 レシートを撮影して読み込む</button>
+      <button class="btn btn-secondary" onclick="triggerCameraClick()" style="margin-bottom: 12px;">📸 レシートを撮影して読み込む</button>
       
       <div id="imagePreviewArea">
         <img id="receiptImagePreview" src="" alt="レシートプレビュー">
@@ -252,10 +280,15 @@
     <div id="resultArea">
       <h2 style="font-size: 18px; margin-top: 0; color: #ff6b6b; text-align: center;">お会計結果</h2>
       <ul class="member-list" id="resultList"></ul>
+      
+      <div id="resultSummary" class="result-summary"></div>
+      
+      <button class="btn btn-screenshot" onclick="takeScreenshot()">📸 画面をスクショ保存する</button>
     </div>
   </div>
 
   <script>
+    // メンバーのデータ構造を {name: 名前, weight: 傾斜比率} に変更
     let members = [];
     let receiptItems = [];
 
@@ -282,10 +315,16 @@
       const input = document.getElementById('memberName');
       const name = input.value.trim();
       if (name !== "") {
-        members.push(name);
+        // 初期状態の傾斜は「1.0 (通常)」
+        members.push({ name: name, weight: 1.0 });
         input.value = "";
         updateUI();
       }
+    }
+
+    // ★追加：傾斜（比率）が変更されたときの処理★
+    function changeWeight(index, value) {
+      members[index].weight = parseFloat(value);
     }
 
     function deleteMember(index) {
@@ -293,15 +332,20 @@
       updateUI();
     }
 
+    // ★機能追加：レシート撮影ボタンを押したときのチェックと親切な案内★
+    function triggerCameraClick() {
+      if (members.length === 0) {
+        alert("🚨 メンバーが1人も登録されていません！\n\nレシートを撮影する前に、まずは一番上の『1. メンバー登録』から、一緒に飲んでいるお友達の名前を追加してください。");
+        return;
+      }
+      // メンバーがいる場合のみ、隠しカメラ入力をクリックして起動
+      document.getElementById('cameraInput').click();
+    }
+
     async function handleImageUpload(event) {
       const apiKey = localStorage.getItem('geminiApiKey');
       if (!apiKey) {
         alert("一番上の設定欄にGemini APIキーを入力して保存してください！");
-        event.target.value = "";
-        return;
-      }
-      if (members.length === 0) {
-        alert("先にメンバーを登録してください！");
         event.target.value = "";
         return;
       }
@@ -324,9 +368,8 @@
       reader.readAsDataURL(file);
     }
 
-    // --- ★AI（Gemini 2.5 Flash）と通信する処理★ ---
+    // --- AI（Gemini 2.5 Flash）と通信する処理 ---
     async function analyzeReceiptWithGemini(base64Data, apiKey) {
-      // ★モデルの指定を「gemini-2.5-flash」に変更しました！
       const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
       
       const promptText = `
@@ -374,7 +417,7 @@
 
       } catch (error) {
         console.error(error);
-        alert("画像の読み取りに失敗しました。\n\n【エラー詳細】\n" + error.message);
+        alert("画像の読み取りに失敗しました。\n\n【エラー詳細】\n" + error.message + "\n\n※直らない場合は、URL内の「v1」を「v1beta」に書き換えてお試しください。");
       } finally {
         document.getElementById('loadingMessage').style.display = 'none';
         updateUI();
@@ -406,10 +449,24 @@
     }
 
     function updateUI() {
+      // ★変更点：メンバーリストに傾斜比率の選択ドロップダウンを追加★
       const memberList = document.getElementById('memberList');
       memberList.innerHTML = "";
-      members.forEach((name, index) => {
-        memberList.innerHTML += `<li>${name} <button class="delete-btn" onclick="deleteMember(${index})">×</button></li>`;
+      members.forEach((m, index) => {
+        memberList.innerHTML += `
+          <li>
+            <span>👤 ${m.name}</span>
+            <div>
+              <select class="weight-select" onchange="changeWeight(${index}, this.value)">
+                <option value="1.0" ${m.weight === 1.0 ? 'selected' : ''}>通常 (1.0)</option>
+                <option value="1.5" ${m.weight === 1.5 ? 'selected' : ''}>多め (1.5)</option>
+                <option value="2.0" ${m.weight === 2.0 ? 'selected' : ''}>上司/主役 (2.0)</option>
+                <option value="0.5" ${m.weight === 0.5 ? 'selected' : ''}>少なめ (0.5)</option>
+                <option value="0.0" ${m.weight === 0.0 ? 'selected' : ''}>ご馳走(0.0)</option>
+              </select>
+              <button class="delete-btn" onclick="deleteMember(${index})">×</button>
+            </div>
+          </li>`;
       });
 
       const receiptArea = document.getElementById('receiptItemsArea');
@@ -424,13 +481,13 @@
           </div>
         `;
         
-        members.forEach((name, memberIdx) => {
+        members.forEach((m, memberIdx) => {
           let qty = item.customAssign[memberIdx] || 0;
           let isCustom = (!isAll && qty > 0);
           
           optionsHTML += `
             <div class="assign-row ${isCustom ? 'active' : ''}">
-              <span>🍺 ${name}</span>
+              <span>🍺 ${m.name}</span>
               <div class="qty-controls">
                 <button class="qty-btn" onclick="updateQty(${index}, ${memberIdx}, -1)">-</button>
                 <span style="font-weight: bold; width: 16px; text-align: center;">${qty}</span>
@@ -454,6 +511,7 @@
       });
     }
 
+    // --- 割り勘計算ロジック（★傾斜配分対応版★） ---
     function calculate() {
       if (members.length === 0 || receiptItems.length === 0) {
         alert("メンバーの追加とレシートの読み込みを行ってください。");
@@ -461,8 +519,9 @@
       }
 
       let sharedFoodTotal = 0;
-      let results = members.map(name => ({ name: name, drinkTotal: 0, totalAmount: 0 }));
+      let results = members.map(m => ({ name: m.name, foodAmount: 0, drinkTotal: 0, totalAmount: 0 }));
 
+      // 1. 個別飲み物代と、全員割り勘（ごはん）の総額を集計
       receiptItems.forEach(item => {
         if (item.assignType === "all") {
           sharedFoodTotal += item.price;
@@ -483,23 +542,75 @@
         }
       });
 
-      const foodPerPerson = Math.ceil(sharedFoodTotal / members.length);
+      // 2. ★ごはん代の傾斜計算★ 全員の比率（ウェイト）の合計を算出
+      let totalWeight = members.reduce((sum, m) => sum + m.weight, 0);
 
+      // 各メンバーの傾斜に応じてごはん代を分配
+      results.forEach((res, index) => {
+        let userWeight = members[index].weight;
+        let foodPortion = 0;
+        if (totalWeight > 0 && userWeight > 0) {
+          // ごはん総額 × (自分の比率 / 全体の比率の合計)  ※端数は切り上げ
+          foodPortion = Math.ceil(sharedFoodTotal * (userWeight / totalWeight));
+        }
+        res.foodAmount = foodPortion;
+      });
+
+      // 3. 結果の画面描画と総合計の計算
       const resultArea = document.getElementById('resultArea');
       const resultList = document.getElementById('resultList');
+      const resultSummary = document.getElementById('resultSummary');
+      
       resultList.innerHTML = "";
+      let finalGrandTotal = 0; // ★機能追加：割り勘の最終合計額を貯める箱★
 
       results.forEach(res => {
-        res.totalAmount = foodPerPerson + res.drinkTotal;
+        res.totalAmount = res.foodAmount + res.drinkTotal;
+        finalGrandTotal += res.totalAmount; // 全員の請求額を足していく
+
         resultList.innerHTML += `
           <li style="flex-direction: column; align-items: flex-start;">
             <div class="result-item">${res.name}： ${res.totalAmount.toLocaleString()} 円</div>
-            <div class="result-detail">（内訳: ごはん ${foodPerPerson.toLocaleString()}円 ＋ 個別 ${res.drinkTotal.toLocaleString()}円）</div>
+            <div class="result-detail">（内訳: ごはん ${res.foodAmount.toLocaleString()}円 ＋ 個別 ${res.drinkTotal.toLocaleString()}円）</div>
           </li>
         `;
       });
 
+      // ★機能追加：画面に「割り勘の合計金額」を表示してレシートと一致しているか確認可能にする★
+      resultSummary.innerHTML = `💰 割り勘総合計: ${finalGrandTotal.toLocaleString()} 円`;
+
       resultArea.style.display = "block";
+      
+      // 計算完了後に結果画面までスムーズにスクロール
+      resultArea.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ★機能追加：ワンタップ全画面（アプリ領域）スクショ保存機能★
+    function takeScreenshot() {
+      const element = document.getElementById('appContainer');
+      
+      // ボタンを一瞬非表示にする（スクショ画像にボタンが写り込まないようにする配慮）
+      const screenshotBtn = document.querySelector('.btn-screenshot');
+      screenshotBtn.style.visibility = 'hidden';
+
+      html2canvas(element, {
+        scale: 2, // 画質をきれいに2倍にする設定
+        useCORS: true,
+        backgroundColor: "#ffffff"
+      }).then(canvas => {
+        // スクショ用のリンクを作って自動クリック（ダウンロード）
+        const link = document.createElement('a');
+        link.download = '割り勘お会計結果.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        // ボタンの表示を元に戻す
+        screenshotBtn.style.visibility = 'visible';
+      }).catch(error => {
+        console.error(error);
+        alert("スクショの保存に失敗しました。スマホ自体のスクショ機能をお使いください。");
+        screenshotBtn.style.visibility = 'visible';
+      });
     }
   </script>
 
