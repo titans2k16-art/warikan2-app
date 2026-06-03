@@ -65,4 +65,286 @@
     .member-list li {
       display: flex;
       justify-content: space-between;
-      align-items:
+      align-items: center;
+      background-color: #f8f9fa;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .delete-btn {
+      color: #ff4d4f;
+      background: none;
+      border: none;
+      font-size: 20px;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    
+    /* レシート仕分けリストのデザイン進化版 */
+    .receipt-item {
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .receipt-item-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+    }
+    .assign-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #ccc;
+    }
+    .assign-label {
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background-color: #ffffff;
+      border: 1px solid #bbb;
+      padding: 6px 10px;
+      border-radius: 20px;
+    }
+    .assign-label input {
+      margin: 0;
+      transform: scale(1.2);
+    }
+    
+    .btn {
+      display: block;
+      width: 100%;
+      background-color: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 16px;
+    }
+    .btn-secondary {
+      background-color: #6c757d;
+      margin-top: 0;
+    }
+    
+    #resultArea {
+      display: none;
+      margin-top: 24px;
+      padding: 16px;
+      background-color: #fff0f0;
+      border: 2px solid #ff6b6b;
+      border-radius: 8px;
+    }
+    .result-item {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .result-detail {
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🍻 居酒屋割り勘アプリ</h1>
+
+    <div class="section">
+      <div class="section-title">1. メンバー登録</div>
+      <div class="input-group">
+        <input type="text" id="memberName" placeholder="名前（例：山田）">
+        <button onclick="addMember()">追加</button>
+      </div>
+      <ul class="member-list" id="memberList"></ul>
+    </div>
+
+    <div class="section">
+      <div class="section-title">2. レシート仕分け</div>
+      <button class="btn btn-secondary" onclick="loadDummyReceipt()" style="margin-bottom: 12px;">📸 レシートを読み込む（テスト用）</button>
+      
+      <div id="receiptItemsArea"></div>
+    </div>
+
+    <button class="btn" onclick="calculate()">💰 割り勘を計算する</button>
+
+    <div id="resultArea">
+      <h2 style="font-size: 18px; margin-top: 0; color: #ff6b6b; text-align: center;">お会計結果</h2>
+      <ul class="member-list" id="resultList"></ul>
+    </div>
+  </div>
+
+  <script>
+    let members = [];
+    let receiptItems = [];
+
+    // --- メンバー管理 ---
+    function addMember() {
+      const input = document.getElementById('memberName');
+      const name = input.value.trim();
+      if (name !== "") {
+        members.push(name);
+        input.value = "";
+        updateUI();
+      }
+    }
+
+    function deleteMember(index) {
+      members.splice(index, 1);
+      updateUI();
+    }
+
+    // --- レシート読み込み（ダミー） ---
+    function loadDummyReceipt() {
+      if (members.length === 0) {
+        alert("先にメンバーを登録してください！");
+        return;
+      }
+      
+      // 数量が含まれたリアルなダミーデータ（assigneesに誰が払うかを配列で記録）
+      receiptItems = [
+        { name: "生ビール 3点", price: 1650, assignees: ["all"] },
+        { name: "牛すじ煮込み", price: 680, assignees: ["all"] },
+        { name: "ウーロン茶 2点", price: 600, assignees: ["all"] },
+        { name: "刺身盛り合わせ", price: 2400, assignees: ["all"] },
+        { name: "レモンサワー 1点", price: 450, assignees: ["all"] }
+      ];
+      updateUI();
+    }
+
+    // --- 仕分けチェックボックスが押された時の処理 ---
+    function toggleAssign(itemIndex, value, isChecked) {
+      let item = receiptItems[itemIndex];
+      
+      if (value === 'all') {
+        if (isChecked) {
+          // 「全員」にチェックを入れたら、個人のチェックは全て外す
+          item.assignees = ['all'];
+        } else {
+          item.assignees = []; 
+        }
+      } else {
+        if (isChecked) {
+          // 個人にチェックを入れたら、「全員」のチェックを外す
+          item.assignees = item.assignees.filter(a => a !== 'all');
+          item.assignees.push(value);
+        } else {
+          // チェックを外す
+          item.assignees = item.assignees.filter(a => a !== value);
+        }
+      }
+      
+      // もし全員のチェックが外れて空っぽになったら、安全のために「全員」に戻す
+      if (item.assignees.length === 0) {
+        item.assignees = ['all'];
+      }
+      
+      updateUI(); // 画面を再描画
+    }
+
+    // --- 画面の更新 ---
+    function updateUI() {
+      const memberList = document.getElementById('memberList');
+      memberList.innerHTML = "";
+      members.forEach((name, index) => {
+        memberList.innerHTML += `<li>${name} <button class="delete-btn" onclick="deleteMember(${index})">×</button></li>`;
+      });
+
+      const receiptArea = document.getElementById('receiptItemsArea');
+      receiptArea.innerHTML = "";
+      
+      receiptItems.forEach((item, index) => {
+        // 全員チェックボックス
+        let isAllChecked = item.assignees.includes('all') ? 'checked' : '';
+        let optionsHTML = `
+          <label class="assign-label" style="${isAllChecked ? 'background-color: #e6f2ff; border-color: #0056b3;' : ''}">
+            <input type="checkbox" onchange="toggleAssign(${index}, 'all', this.checked)" ${isAllChecked}>
+            🍚 全員
+          </label>
+        `;
+        
+        // 個人チェックボックス
+        members.forEach((name, memberIdx) => {
+          let isMemberChecked = item.assignees.includes(String(memberIdx)) ? 'checked' : '';
+          optionsHTML += `
+            <label class="assign-label" style="${isMemberChecked ? 'background-color: #fff0f0; border-color: #ff6b6b;' : ''}">
+              <input type="checkbox" onchange="toggleAssign(${index}, '${memberIdx}', this.checked)" ${isMemberChecked}>
+              🍺 ${name}
+            </label>
+          `;
+        });
+
+        receiptArea.innerHTML += `
+          <div class="receipt-item">
+            <div class="receipt-item-header">
+              <span>${item.name}</span>
+              <span>${item.price} 円</span>
+            </div>
+            <div class="assign-area">
+              ${optionsHTML}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // --- 割り勘計算ロジック ---
+    function calculate() {
+      if (members.length === 0 || receiptItems.length === 0) {
+        alert("メンバーの追加とレシートの読み込みを行ってください。");
+        return;
+      }
+
+      let sharedFoodTotal = 0;
+      
+      let results = members.map(name => ({
+        name: name,
+        drinkTotal: 0,
+        totalAmount: 0
+      }));
+
+      // 仕分け結果を集計
+      receiptItems.forEach(item => {
+        if (item.assignees.includes("all")) {
+          // 全員割り勘のごはん代
+          sharedFoodTotal += item.price;
+        } else {
+          // ★選ばれた人たちで均等割り★
+          const splitPrice = Math.ceil(item.price / item.assignees.length);
+          item.assignees.forEach(memberIdxStr => {
+            const memberIndex = parseInt(memberIdxStr, 10);
+            results[memberIndex].drinkTotal += splitPrice;
+          });
+        }
+      });
+
+      const foodPerPerson = Math.ceil(sharedFoodTotal / members.length);
+
+      const resultArea = document.getElementById('resultArea');
+      const resultList = document.getElementById('resultList');
+      resultList.innerHTML = "";
+
+      results.forEach(res => {
+        res.totalAmount = foodPerPerson + res.drinkTotal;
+        resultList.innerHTML += `
+          <li style="flex-direction: column; align-items: flex-start;">
+            <div class="result-item">${res.name}： ${res.totalAmount.toLocaleString()} 円</div>
+            <div class="result-detail">（内訳: ごはん ${foodPerPerson.toLocaleString()}円 ＋ 飲み物 ${res.drinkTotal.toLocaleString()}円）</div>
+          </li>
+        `;
+      });
+
+      resultArea.style.display = "block";
+    }
+  </script>
+
+</body>
+</html>
