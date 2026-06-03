@@ -327,9 +327,11 @@
       reader.readAsDataURL(file);
     }
 
-    // --- ★AI（Gemini）と通信する処理（新方式）★ ---
+    // --- ★AI（Gemini）と通信する処理（404対策版）★ ---
     async function analyzeReceiptWithGemini(base64Data, apiKey) {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+      // 修正1：URLに直接APIキーを埋め込む方式に戻す
+      // 修正2：モデル名を最新の「gemini-1.5-flash-latest」に変更
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
       
       const promptText = `
         このレシート画像から、品名と金額を読み取ってください。
@@ -351,8 +353,8 @@
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey 
+            'Content-Type': 'application/json'
+            // ヘッダーでのキー送信（x-goog-api-key）は干渉を防ぐため削除しました
           },
           body: JSON.stringify(requestBody)
         });
