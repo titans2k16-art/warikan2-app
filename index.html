@@ -40,9 +40,8 @@
       display: flex;
       gap: 8px;
       margin-bottom: 12px;
-      align-items: center;
     }
-    .input-group input, .input-group select {
+    .input-group input {
       flex: 1;
       padding: 10px;
       border: 1px solid #ccc;
@@ -54,13 +53,14 @@
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 10px 16px;
+      padding: 0 16px;
       font-weight: bold;
     }
     .member-list {
       list-style: none;
       padding: 0;
       margin: 0;
+      margin-bottom: 12px;
     }
     .member-list li {
       display: flex;
@@ -80,6 +80,29 @@
       line-height: 1;
       padding: 0 4px;
     }
+    
+    /* 仕分けリスト用のデザイン */
+    .receipt-item {
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .receipt-item-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .receipt-item select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background-color: #fff;
+    }
+    
     .btn {
       display: block;
       width: 100%;
@@ -90,8 +113,13 @@
       padding: 14px;
       font-size: 16px;
       font-weight: bold;
-      margin-top: 24px;
+      margin-top: 16px;
     }
+    .btn-secondary {
+      background-color: #6c757d;
+      margin-top: 0;
+    }
+    
     #resultArea {
       display: none;
       margin-top: 24px;
@@ -103,12 +131,11 @@
     .result-item {
       font-size: 16px;
       font-weight: bold;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
     .result-detail {
       font-size: 12px;
       color: #666;
-      font-weight: normal;
     }
   </style>
 </head>
@@ -117,9 +144,8 @@
   <div class="container">
     <h1>🍻 居酒屋割り勘アプリ</h1>
 
-    <!-- 1. メンバー登録 -->
     <div class="section">
-      <div class="section-title">1. メンバーを登録</div>
+      <div class="section-title">1. メンバー登録</div>
       <div class="input-group">
         <input type="text" id="memberName" placeholder="名前（例：山田）">
         <button onclick="addMember()">追加</button>
@@ -127,35 +153,15 @@
       <ul class="member-list" id="memberList"></ul>
     </div>
 
-    <!-- 2. ごはん代（共通） -->
     <div class="section">
-      <div class="section-title">2. ごはん代（全員で割り勘）</div>
-      <div class="input-group">
-        <input type="number" id="foodTotal" placeholder="ごはんの合計金額を入力">
-        <span>円</span>
-      </div>
+      <div class="section-title">2. レシート仕分け</div>
+      <button class="btn btn-secondary" onclick="loadDummyReceipt()" style="margin-bottom: 12px;">📸 レシートを読み込む（テスト用）</button>
+      
+      <div id="receiptItemsArea"></div>
     </div>
 
-    <!-- 3. 飲み物代（個別） -->
-    <div class="section">
-      <div class="section-title">3. 飲み物代（飲んだ人だけ）</div>
-      <div class="input-group">
-        <input type="text" id="drinkName" placeholder="品名（生中など）" style="flex: 1.5;">
-        <input type="number" id="drinkPrice" placeholder="金額" style="flex: 1;">
-      </div>
-      <div class="input-group">
-        <select id="drinkMember">
-          <option value="">誰が飲んだ？</option>
-        </select>
-        <button onclick="addDrink()">追加</button>
-      </div>
-      <ul class="member-list" id="drinkList"></ul>
-    </div>
-
-    <!-- 計算ボタン -->
     <button class="btn" onclick="calculate()">💰 割り勘を計算する</button>
 
-    <!-- 結果表示エリア -->
     <div id="resultArea">
       <h2 style="font-size: 18px; margin-top: 0; color: #ff6b6b; text-align: center;">お会計結果</h2>
       <ul class="member-list" id="resultList"></ul>
@@ -164,9 +170,9 @@
 
   <script>
     let members = [];
-    let drinks = [];
+    let receiptItems = [];
 
-    // メンバー追加処理
+    // --- メンバー管理 ---
     function addMember() {
       const input = document.getElementById('memberName');
       const name = input.value.trim();
@@ -177,95 +183,106 @@
       }
     }
 
-    // メンバー削除処理
     function deleteMember(index) {
-      // 削除するメンバーに紐づく飲み物も削除する
-      drinks = drinks.filter(drink => drink.memberIndex !== index);
-      // 飲み物の紐づけインデックスを修正する（削除された人より後ろの人）
-      drinks.forEach(drink => {
-        if (drink.memberIndex > index) {
-          drink.memberIndex -= 1;
-        }
-      });
       members.splice(index, 1);
       updateUI();
     }
 
-    // 飲み物追加処理
-    function addDrink() {
-      const name = document.getElementById('drinkName').value.trim();
-      const price = parseInt(document.getElementById('drinkPrice').value, 10);
-      const memberIndex = document.getElementById('drinkMember').value;
-
-      if (name !== "" && !isNaN(price) && memberIndex !== "") {
-        drinks.push({ name: name, price: price, memberIndex: parseInt(memberIndex, 10) });
-        document.getElementById('drinkName').value = "";
-        document.getElementById('drinkPrice').value = "";
-        updateUI();
+    // --- レシート読み込み（ダミー） ---
+    function loadDummyReceipt() {
+      if (members.length === 0) {
+        alert("先にメンバーを登録してください！");
+        return;
       }
-    }
-
-    // 飲み物削除処理
-    function deleteDrink(index) {
-      drinks.splice(index, 1);
+      
+      // OCRで読み取ったと仮定するデータ
+      receiptItems = [
+        { name: "生ビール", price: 550, assignedTo: "food" },
+        { name: "牛すじ煮込み", price: 680, assignedTo: "food" },
+        { name: "ウーロン茶", price: 300, assignedTo: "food" },
+        { name: "串焼き盛り合わせ", price: 1200, assignedTo: "food" },
+        { name: "レモンサワー", price: 450, assignedTo: "food" }
+      ];
       updateUI();
     }
 
-    // 画面のリストとドロップダウンを最新化
+    // 仕分け先（ドロップダウン）が変更されたときの処理
+    function changeAssign(itemIndex, value) {
+      receiptItems[itemIndex].assignedTo = value;
+    }
+
+    // --- 画面の更新 ---
     function updateUI() {
-      // メンバーリストの更新
+      // 1. メンバーリストの描画
       const memberList = document.getElementById('memberList');
       memberList.innerHTML = "";
       members.forEach((name, index) => {
         memberList.innerHTML += `<li>${name} <button class="delete-btn" onclick="deleteMember(${index})">×</button></li>`;
       });
 
-      // 飲み物を誰が飲んだか選ぶドロップダウンの更新
-      const drinkMember = document.getElementById('drinkMember');
-      drinkMember.innerHTML = '<option value="">誰が飲んだ？</option>';
-      members.forEach((name, index) => {
-        drinkMember.innerHTML += `<option value="${index}">${name}</option>`;
-      });
+      // 2. レシート仕分けエリアの描画
+      const receiptArea = document.getElementById('receiptItemsArea');
+      receiptArea.innerHTML = "";
+      
+      receiptItems.forEach((item, index) => {
+        // 誰の飲み物かを選ぶドロップダウンの作成
+        let optionsHTML = `<option value="food" ${item.assignedTo === 'food' ? 'selected' : ''}>🍚 ごはん（全員割り勘）</option>`;
+        members.forEach((name, memberIdx) => {
+          optionsHTML += `<option value="${memberIdx}" ${item.assignedTo === String(memberIdx) ? 'selected' : ''}>🍺 ${name} の飲み物</option>`;
+        });
 
-      // 追加された飲み物リストの更新
-      const drinkList = document.getElementById('drinkList');
-      drinkList.innerHTML = "";
-      drinks.forEach((drink, index) => {
-        const memberName = members[drink.memberIndex];
-        drinkList.innerHTML += `<li>${memberName}：${drink.name} (${drink.price}円) <button class="delete-btn" onclick="deleteDrink(${index})">×</button></li>`;
+        receiptArea.innerHTML += `
+          <div class="receipt-item">
+            <div class="receipt-item-header">
+              <span>${item.name}</span>
+              <span>${item.price}円</span>
+            </div>
+            <select onchange="changeAssign(${index}, this.value)">
+              ${optionsHTML}
+            </select>
+          </div>
+        `;
       });
     }
 
-    // ★割り勘の計算ロジック★
+    // --- 割り勘計算ロジック ---
     function calculate() {
-      if (members.length === 0) {
-        alert("まずはメンバーを追加してください！");
+      if (members.length === 0 || receiptItems.length === 0) {
+        alert("メンバーの追加とレシートの読み込みを行ってください。");
         return;
       }
 
-      // ごはん代の1人あたりの金額を計算（端数切り上げ）
-      const foodTotal = parseInt(document.getElementById('foodTotal').value, 10) || 0;
-      const foodPerPerson = Math.ceil(foodTotal / members.length);
-
-      // 各メンバーの請求額を計算
+      let sharedFoodTotal = 0;
+      
+      // 各メンバーごとの合計額を記録する箱を準備
       let results = members.map(name => ({
         name: name,
-        totalAmount: foodPerPerson,
-        drinkTotal: 0
+        drinkTotal: 0,
+        totalAmount: 0
       }));
 
-      // 飲み物代をそれぞれのメンバーに加算
-      drinks.forEach(drink => {
-        results[drink.memberIndex].totalAmount += drink.price;
-        results[drink.memberIndex].drinkTotal += drink.price;
+      // 仕分け結果を集計
+      receiptItems.forEach(item => {
+        if (item.assignedTo === "food") {
+          // 全員割り勘のごはん代に加算
+          sharedFoodTotal += item.price;
+        } else {
+          // 選ばれた個人の飲み物代に加算
+          const memberIndex = parseInt(item.assignedTo, 10);
+          results[memberIndex].drinkTotal += item.price;
+        }
       });
 
-      // 結果を画面に表示
+      // ごはん代を人数で割る（端数切り上げ）
+      const foodPerPerson = Math.ceil(sharedFoodTotal / members.length);
+
+      // 最終的な請求額を計算して画面に表示
       const resultArea = document.getElementById('resultArea');
       const resultList = document.getElementById('resultList');
       resultList.innerHTML = "";
 
       results.forEach(res => {
+        res.totalAmount = foodPerPerson + res.drinkTotal;
         resultList.innerHTML += `
           <li style="flex-direction: column; align-items: flex-start;">
             <div class="result-item">${res.name}： ${res.totalAmount.toLocaleString()} 円</div>
