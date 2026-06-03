@@ -242,7 +242,7 @@
         <img id="receiptImagePreview" src="" alt="レシートプレビュー">
       </div>
 
-      <div id="loadingMessage">⏳ レシートをAIで解析中... (数秒かかります)</div>
+      <div id="loadingMessage">⏳ 最新のGemini 2.5でレシートを解析中...</div>
 
       <div id="receiptItemsArea"></div>
     </div>
@@ -324,10 +324,10 @@
       reader.readAsDataURL(file);
     }
 
-    // --- ★AI（Gemini）と通信する処理（完全修正版）★ ---
+    // --- ★AI（Gemini 2.5 Flash）と通信する処理★ ---
     async function analyzeReceiptWithGemini(base64Data, apiKey) {
-      // 修正1：URLを本番用の「v1」に変更し、モデルを「gemini-1.5-flash」に戻しました
-      const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      // ★モデルの指定を「gemini-2.5-flash」に変更しました！
+      const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
       
       const promptText = `
         このレシート画像から、品名と金額を読み取ってください。
@@ -340,7 +340,6 @@
         contents: [{
           parts: [
             { text: promptText },
-            // 修正2：Google APIの厳格なルールに合わせて「inlineData」と「mimeType」を正しく指定
             { inlineData: { mimeType: "image/jpeg", data: base64Data } }
           ]
         }]
