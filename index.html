@@ -23,7 +23,7 @@
     h1 {
       font-size: 20px;
       text-align: center;
-      color: #0056b3; /* ちょっとシックな青色に変更してみました */
+      color: #0056b3;
       margin-top: 0;
     }
     .section {
@@ -36,28 +36,27 @@
       padding-bottom: 4px;
       margin-bottom: 12px;
     }
-    /* 追加：入力フォームのスタイル */
     .input-group {
       display: flex;
       gap: 8px;
       margin-bottom: 12px;
+      align-items: center;
     }
-    .input-group input {
+    .input-group input, .input-group select {
       flex: 1;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 6px;
-      font-size: 16px;
+      font-size: 14px;
     }
     .input-group button {
       background-color: #0056b3;
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 0 16px;
+      padding: 10px 16px;
       font-weight: bold;
     }
-    /* 追加：メンバーリストのスタイル */
     .member-list {
       list-style: none;
       padding: 0;
@@ -71,7 +70,7 @@
       padding: 10px 12px;
       border-radius: 6px;
       margin-bottom: 6px;
-      font-size: 15px;
+      font-size: 14px;
     }
     .delete-btn {
       color: #ff4d4f;
@@ -81,26 +80,35 @@
       line-height: 1;
       padding: 0 4px;
     }
-    .dummy-box {
-      background-color: #f8f9fa;
-      border: 1px dashed #ccc;
-      border-radius: 8px;
-      padding: 16px;
-      text-align: center;
-      color: #888;
-      font-size: 14px;
-    }
     .btn {
       display: block;
       width: 100%;
-      background-color: #0056b3;
+      background-color: #ff6b6b;
       color: white;
       border: none;
       border-radius: 8px;
       padding: 14px;
       font-size: 16px;
       font-weight: bold;
-      margin-top: 16px;
+      margin-top: 24px;
+    }
+    #resultArea {
+      display: none;
+      margin-top: 24px;
+      padding: 16px;
+      background-color: #fff0f0;
+      border: 2px solid #ff6b6b;
+      border-radius: 8px;
+    }
+    .result-item {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .result-detail {
+      font-size: 12px;
+      color: #666;
+      font-weight: normal;
     }
   </style>
 </head>
@@ -109,8 +117,9 @@
   <div class="container">
     <h1>🍻 居酒屋割り勘アプリ</h1>
 
+    <!-- 1. メンバー登録 -->
     <div class="section">
-      <div class="section-title">1. メンバー登録</div>
+      <div class="section-title">1. メンバーを登録</div>
       <div class="input-group">
         <input type="text" id="memberName" placeholder="名前（例：山田）">
         <button onclick="addMember()">追加</button>
@@ -118,55 +127,154 @@
       <ul class="member-list" id="memberList"></ul>
     </div>
 
+    <!-- 2. ごはん代（共通） -->
     <div class="section">
-      <div class="section-title">2. レシート読み込み</div>
-      <div class="dummy-box">📸 カメラを起動するボタンが入ります</div>
+      <div class="section-title">2. ごはん代（全員で割り勘）</div>
+      <div class="input-group">
+        <input type="number" id="foodTotal" placeholder="ごはんの合計金額を入力">
+        <span>円</span>
+      </div>
     </div>
 
+    <!-- 3. 飲み物代（個別） -->
     <div class="section">
-      <div class="section-title">3. 仕分け（ごはん / 飲み物）</div>
-      <div class="dummy-box">読み込んだ品物リストと、誰の飲み物か選ぶ画面が入ります</div>
+      <div class="section-title">3. 飲み物代（飲んだ人だけ）</div>
+      <div class="input-group">
+        <input type="text" id="drinkName" placeholder="品名（生中など）" style="flex: 1.5;">
+        <input type="number" id="drinkPrice" placeholder="金額" style="flex: 1;">
+      </div>
+      <div class="input-group">
+        <select id="drinkMember">
+          <option value="">誰が飲んだ？</option>
+        </select>
+        <button onclick="addDrink()">追加</button>
+      </div>
+      <ul class="member-list" id="drinkList"></ul>
     </div>
 
-    <button class="btn">割り勘を計算する</button>
+    <!-- 計算ボタン -->
+    <button class="btn" onclick="calculate()">💰 割り勘を計算する</button>
+
+    <!-- 結果表示エリア -->
+    <div id="resultArea">
+      <h2 style="font-size: 18px; margin-top: 0; color: #ff6b6b; text-align: center;">お会計結果</h2>
+      <ul class="member-list" id="resultList"></ul>
+    </div>
   </div>
 
   <script>
-    // メンバーの名前を保存する「箱（配列）」を用意
     let members = [];
+    let drinks = [];
 
-    // 追加ボタンが押された時の処理
+    // メンバー追加処理
     function addMember() {
       const input = document.getElementById('memberName');
-      const name = input.value.trim(); // 入力された文字を取得
-
+      const name = input.value.trim();
       if (name !== "") {
-        members.push(name); // 箱に名前を追加
-        input.value = ""; // 入力欄を空にする
-        updateList(); // 画面を更新する
+        members.push(name);
+        input.value = "";
+        updateUI();
       }
     }
 
-    // 削除（×）ボタンが押された時の処理
+    // メンバー削除処理
     function deleteMember(index) {
-      members.splice(index, 1); // 箱から指定した名前を削る
-      updateList(); // 画面を更新する
+      // 削除するメンバーに紐づく飲み物も削除する
+      drinks = drinks.filter(drink => drink.memberIndex !== index);
+      // 飲み物の紐づけインデックスを修正する（削除された人より後ろの人）
+      drinks.forEach(drink => {
+        if (drink.memberIndex > index) {
+          drink.memberIndex -= 1;
+        }
+      });
+      members.splice(index, 1);
+      updateUI();
     }
 
-    // 画面のリストを最新状態に書き換える処理
-    function updateList() {
-      const list = document.getElementById('memberList');
-      list.innerHTML = ""; // 一度リストをリセット
+    // 飲み物追加処理
+    function addDrink() {
+      const name = document.getElementById('drinkName').value.trim();
+      const price = parseInt(document.getElementById('drinkPrice').value, 10);
+      const memberIndex = document.getElementById('drinkMember').value;
 
-      // 箱の中身を順番に取り出して、HTMLとして画面にくっつける
+      if (name !== "" && !isNaN(price) && memberIndex !== "") {
+        drinks.push({ name: name, price: price, memberIndex: parseInt(memberIndex, 10) });
+        document.getElementById('drinkName').value = "";
+        document.getElementById('drinkPrice').value = "";
+        updateUI();
+      }
+    }
+
+    // 飲み物削除処理
+    function deleteDrink(index) {
+      drinks.splice(index, 1);
+      updateUI();
+    }
+
+    // 画面のリストとドロップダウンを最新化
+    function updateUI() {
+      // メンバーリストの更新
+      const memberList = document.getElementById('memberList');
+      memberList.innerHTML = "";
       members.forEach((name, index) => {
-        list.innerHTML += `
-          <li>
-            ${name}
-            <button class="delete-btn" onclick="deleteMember(${index})">×</button>
+        memberList.innerHTML += `<li>${name} <button class="delete-btn" onclick="deleteMember(${index})">×</button></li>`;
+      });
+
+      // 飲み物を誰が飲んだか選ぶドロップダウンの更新
+      const drinkMember = document.getElementById('drinkMember');
+      drinkMember.innerHTML = '<option value="">誰が飲んだ？</option>';
+      members.forEach((name, index) => {
+        drinkMember.innerHTML += `<option value="${index}">${name}</option>`;
+      });
+
+      // 追加された飲み物リストの更新
+      const drinkList = document.getElementById('drinkList');
+      drinkList.innerHTML = "";
+      drinks.forEach((drink, index) => {
+        const memberName = members[drink.memberIndex];
+        drinkList.innerHTML += `<li>${memberName}：${drink.name} (${drink.price}円) <button class="delete-btn" onclick="deleteDrink(${index})">×</button></li>`;
+      });
+    }
+
+    // ★割り勘の計算ロジック★
+    function calculate() {
+      if (members.length === 0) {
+        alert("まずはメンバーを追加してください！");
+        return;
+      }
+
+      // ごはん代の1人あたりの金額を計算（端数切り上げ）
+      const foodTotal = parseInt(document.getElementById('foodTotal').value, 10) || 0;
+      const foodPerPerson = Math.ceil(foodTotal / members.length);
+
+      // 各メンバーの請求額を計算
+      let results = members.map(name => ({
+        name: name,
+        totalAmount: foodPerPerson,
+        drinkTotal: 0
+      }));
+
+      // 飲み物代をそれぞれのメンバーに加算
+      drinks.forEach(drink => {
+        results[drink.memberIndex].totalAmount += drink.price;
+        results[drink.memberIndex].drinkTotal += drink.price;
+      });
+
+      // 結果を画面に表示
+      const resultArea = document.getElementById('resultArea');
+      const resultList = document.getElementById('resultList');
+      resultList.innerHTML = "";
+
+      results.forEach(res => {
+        resultList.innerHTML += `
+          <li style="flex-direction: column; align-items: flex-start;">
+            <div class="result-item">${res.name}： ${res.totalAmount.toLocaleString()} 円</div>
+            <div class="result-detail">（内訳: ごはん ${foodPerPerson.toLocaleString()}円 ＋ 飲み物 ${res.drinkTotal.toLocaleString()}円）</div>
           </li>
         `;
       });
+
+      resultArea.style.display = "block";
     }
   </script>
 
