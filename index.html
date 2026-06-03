@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>居酒屋割り勘アプリ</title>
   <style>
-    /* （前回までのスタイルと同じです） */
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: #f3f4f6;
@@ -57,6 +56,25 @@
       padding: 0 16px;
       font-weight: bold;
     }
+    
+    /* ★追加：設定エリア（APIキー入力用）のデザイン★ */
+    .settings-area {
+      background-color: #e9ecef;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+    .settings-area input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
     .member-list {
       list-style: none;
       padding: 0;
@@ -157,8 +175,6 @@
       background-color: #6c757d;
       margin-top: 0;
     }
-    
-    /* ★追加：プレビュー画像とローディングのスタイル★ */
     #imagePreviewArea {
       display: none;
       text-align: center;
@@ -176,7 +192,6 @@
       font-weight: bold;
       margin-bottom: 16px;
     }
-    
     #resultArea {
       display: none;
       margin-top: 24px;
@@ -201,6 +216,13 @@
   <div class="container">
     <h1>🍻 居酒屋割り勘アプリ</h1>
 
+    <div class="settings-area">
+      <label for="apiKeyInput"><strong>⚙️ Gemini APIキー</strong> (初回のみ入力)</label>
+      <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+      <button onclick="saveApiKey()" style="padding: 6px 12px; background: #333; color: white; border: none; border-radius: 4px;">保存する</button>
+      <span id="apiKeyStatus" style="color: green; display: none; margin-left: 8px;">保存しました！</span>
+    </div>
+
     <div class="section">
       <div class="section-title">1. メンバー登録</div>
       <div class="input-group">
@@ -214,14 +236,13 @@
       <div class="section-title">2. レシート仕分け</div>
       
       <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(event)">
-      
       <button class="btn btn-secondary" onclick="document.getElementById('cameraInput').click()" style="margin-bottom: 12px;">📸 レシートを撮影して読み込む</button>
       
       <div id="imagePreviewArea">
         <img id="receiptImagePreview" src="" alt="レシートプレビュー">
       </div>
 
-      <div id="loadingMessage">⏳ AIがレシートを解析中...</div>
+      <div id="loadingMessage">⏳ レシートをAIで解析中... (数秒かかります)</div>
 
       <div id="receiptItemsArea"></div>
     </div>
@@ -237,6 +258,27 @@
   <script>
     let members = [];
     let receiptItems = [];
+
+    // --- APIキーの保存と読み込み ---
+    window.onload = function() {
+      // 画面を開いた時に、スマホに保存されているキーがあれば復元する
+      const savedKey = localStorage.getItem('geminiApiKey');
+      if (savedKey) {
+        document.getElementById('apiKeyInput').value = savedKey;
+      }
+    };
+
+    function saveApiKey() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      if (key) {
+        localStorage.setItem('geminiApiKey', key); // スマホのブラウザ内に安全に保存
+        const status = document.getElementById('apiKeyStatus');
+        status.style.display = 'inline';
+        setTimeout(() => status.style.display = 'none', 2000);
+      } else {
+        alert("APIキーを入力してください。");
+      }
+    }
 
     // --- メンバー管理 ---
     function addMember() {
@@ -254,52 +296,102 @@
       updateUI();
     }
 
-    // --- ★追加：カメラで撮影した時の処理★ ---
-    function handleImageUpload(event) {
+    // --- 画像の読み込みとGemini API呼び出し ---
+    async function handleImageUpload(event) {
+      const apiKey = localStorage.getItem('geminiApiKey');
+      if (!apiKey) {
+        alert("一番上の設定欄にGemini APIキーを入力して保存してください！");
+        event.target.value = "";
+        return;
+      }
       if (members.length === 0) {
         alert("先にメンバーを登録してください！");
-        event.target.value = ""; // 入力をリセット
+        event.target.value = "";
         return;
       }
 
       const file = event.target.files[0];
       if (!file) return;
 
-      // 1. 画像を画面に表示する
       const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('receiptImagePreview').src = e.target.result;
+      reader.onload = async function(e) {
+        const base64Image = e.target.result;
+        document.getElementById('receiptImagePreview').src = base64Image;
         document.getElementById('imagePreviewArea').style.display = 'block';
         
-        // 2. 解析中のメッセージを出す
         document.getElementById('loadingMessage').style.display = 'block';
-        document.getElementById('receiptItemsArea').innerHTML = ""; // リストを一度消す
+        document.getElementById('receiptItemsArea').innerHTML = ""; 
         
-        // 3. AIの読み取りを「フリ」でシミュレーション（約2秒待つ）
-        setTimeout(() => {
-          simulateAIOCR();
-        }, 2000);
+        // 画像の「data:image/jpeg;base64,」の部分を削って純粋なデータにする
+        const base64Data = base64Image.split(',')[1];
+        
+        // ★本物のGeminiに解析をお願いする関数を呼び出し★
+        await analyzeReceiptWithGemini(base64Data, apiKey);
       }
       reader.readAsDataURL(file);
     }
 
-    // --- AI読み取り（シミュレーション） ---
-    function simulateAIOCR() {
-      // 実際はここでAIに画像を送信し、結果を受け取ります。今回はダミーデータを使います。
-      receiptItems = [
-        { name: "生ビール 3点", price: 1650, assignType: "all", customAssign: {} },
-        { name: "牛すじ煮込み", price: 680, assignType: "all", customAssign: {} },
-        { name: "ウーロン茶 2点", price: 600, assignType: "all", customAssign: {} },
-        { name: "刺身盛り合わせ", price: 2400, assignType: "all", customAssign: {} },
-        { name: "レモンサワー 1点", price: 450, assignType: "all", customAssign: {} }
-      ];
+    // --- ★AI（Gemini）と通信する処理★ ---
+    async function analyzeReceiptWithGemini(base64Data, apiKey) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
       
-      // 解析中メッセージを消して、リストを表示する
-      document.getElementById('loadingMessage').style.display = 'none';
-      updateUI();
+      // Geminiへの指示（プロンプト）
+      const promptText = `
+        このレシート画像から、品名と金額を読み取ってください。
+        出力は必ず以下のJSON形式の配列「のみ」とし、マークダウン（\`\`\`json など）やその他の文章は一切含めないでください。
+        合計金額やお釣りなどの項目は除外し、注文した品物だけを抽出してください。
+        例: [{"name": "生ビール", "price": 500}, {"name": "枝豆", "price": 300}]
+      `;
+
+      const requestBody = {
+        contents: [{
+          parts: [
+            { text: promptText },
+            { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+          ]
+        }]
+      };
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          throw new Error("AI通信エラー: APIキーが間違っているか、通信環境に問題があります。");
+        }
+
+        const data = await response.json();
+        // AIが返してくれたテキストを取り出す
+        let aiResponseText = data.candidates[0].content.parts[0].text;
+        
+        // 万が一AIがマークダウンをつけて返してきた時のための保険処理
+        aiResponseText = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        // テキストをプログラムで使える配列（JSON）に変換
+        const extractedItems = JSON.parse(aiResponseText);
+        
+        // アプリのデータ構造に変換
+        receiptItems = extractedItems.map(item => ({
+          name: item.name,
+          price: parseInt(item.price, 10),
+          assignType: "all",
+          customAssign: {}
+        }));
+
+      } catch (error) {
+        console.error(error);
+        alert("画像の読み取りに失敗しました。もう一度やり直すか、明るい場所で撮り直してください。\n" + error.message);
+      } finally {
+        // 解析中メッセージを消して画面を更新
+        document.getElementById('loadingMessage').style.display = 'none';
+        updateUI();
+      }
     }
 
-    // --- 数量の変更（＋ / −）が押された時の処理 ---
+    // --- 数量の変更（＋ / −） ---
     function updateQty(itemIndex, memberIndex, delta) {
       let item = receiptItems[itemIndex];
       let currentQty = item.customAssign[memberIndex] || 0;
@@ -338,7 +430,6 @@
       
       receiptItems.forEach((item, index) => {
         let isAll = item.assignType === "all";
-
         let optionsHTML = `
           <div class="assign-row ${isAll ? 'all-active' : ''}" onclick="setAllAssign(${index})" style="cursor: pointer;">
             <span style="font-weight: ${isAll ? 'bold' : 'normal'};">🍚 全員で割り勘（ごはんなど）</span>
@@ -376,7 +467,7 @@
       });
     }
 
-    // --- 割り勘計算ロジック（割合計算） ---
+    // --- 割り勘計算ロジック ---
     function calculate() {
       if (members.length === 0 || receiptItems.length === 0) {
         alert("メンバーの追加とレシートの読み込みを行ってください。");
