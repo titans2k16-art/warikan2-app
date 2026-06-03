@@ -218,7 +218,7 @@
 
     <div class="settings-area">
       <label for="apiKeyInput"><strong>⚙️ Gemini APIキー</strong> (初回のみ入力)</label>
-      <input type="password" id="apiKeyInput" placeholder="AIza... または AQ. から始まるキー">
+      <input type="password" id="apiKeyInput" placeholder="AQ. から始まるキーを入力">
       <button onclick="saveApiKey()" style="padding: 6px 12px; background: #333; color: white; border: none; border-radius: 4px;">保存する</button>
       <span id="apiKeyStatus" style="color: green; display: none; margin-left: 8px;">保存しました！</span>
     </div>
@@ -259,7 +259,6 @@
     let members = [];
     let receiptItems = [];
 
-    // --- APIキーの保存と読み込み ---
     window.onload = function() {
       const savedKey = localStorage.getItem('geminiApiKey');
       if (savedKey) {
@@ -279,7 +278,6 @@
       }
     }
 
-    // --- メンバー管理 ---
     function addMember() {
       const input = document.getElementById('memberName');
       const name = input.value.trim();
@@ -295,7 +293,6 @@
       updateUI();
     }
 
-    // --- 画像の読み込みとAI起動 ---
     async function handleImageUpload(event) {
       const apiKey = localStorage.getItem('geminiApiKey');
       if (!apiKey) {
@@ -327,11 +324,10 @@
       reader.readAsDataURL(file);
     }
 
-    // --- ★AI（Gemini）と通信する処理（404対策版）★ ---
+    // --- ★AI（Gemini）と通信する処理（完全修正版）★ ---
     async function analyzeReceiptWithGemini(base64Data, apiKey) {
-      // 修正1：URLに直接APIキーを埋め込む方式に戻す
-      // 修正2：モデル名を最新の「gemini-1.5-flash-latest」に変更
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+      // 修正1：URLを本番用の「v1」に変更し、モデルを「gemini-1.5-flash」に戻しました
+      const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
       
       const promptText = `
         このレシート画像から、品名と金額を読み取ってください。
@@ -344,7 +340,8 @@
         contents: [{
           parts: [
             { text: promptText },
-            { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+            // 修正2：Google APIの厳格なルールに合わせて「inlineData」と「mimeType」を正しく指定
+            { inlineData: { mimeType: "image/jpeg", data: base64Data } }
           ]
         }]
       };
@@ -352,10 +349,7 @@
       try {
         const response = await fetch(endpoint, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json'
-            // ヘッダーでのキー送信（x-goog-api-key）は干渉を防ぐため削除しました
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody)
         });
 
@@ -388,7 +382,6 @@
       }
     }
 
-    // --- 数量の変更（＋ / −） ---
     function updateQty(itemIndex, memberIndex, delta) {
       let item = receiptItems[itemIndex];
       let currentQty = item.customAssign[memberIndex] || 0;
@@ -407,14 +400,12 @@
       updateUI();
     }
 
-    // --- 強制的に「全員割り勘」に戻す ---
     function setAllAssign(itemIndex) {
       receiptItems[itemIndex].assignType = "all";
       receiptItems[itemIndex].customAssign = {};
       updateUI();
     }
 
-    // --- 画面の更新 ---
     function updateUI() {
       const memberList = document.getElementById('memberList');
       memberList.innerHTML = "";
@@ -464,7 +455,6 @@
       });
     }
 
-    // --- 割り勘計算ロジック ---
     function calculate() {
       if (members.length === 0 || receiptItems.length === 0) {
         alert("メンバーの追加とレシートの読み込みを行ってください。");
