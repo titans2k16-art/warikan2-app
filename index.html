@@ -81,7 +81,7 @@
       padding: 0 4px;
     }
     
-    /* レシート仕分けリストのデザイン進化版 */
+    /* レシート仕分けの数量カウンターデザイン */
     .receipt-item {
       background-color: #f8f9fa;
       border: 1px solid #ddd;
@@ -93,28 +93,56 @@
       display: flex;
       justify-content: space-between;
       font-weight: bold;
+      margin-bottom: 10px;
     }
     .assign-area {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-      padding-top: 10px;
+      flex-direction: column;
+      gap: 6px;
       border-top: 1px dashed #ccc;
+      padding-top: 10px;
     }
-    .assign-label {
-      font-size: 13px;
+    .assign-row {
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border-radius: 6px;
       background-color: #ffffff;
-      border: 1px solid #bbb;
-      padding: 6px 10px;
-      border-radius: 20px;
+      border: 1px solid #eee;
     }
-    .assign-label input {
-      margin: 0;
-      transform: scale(1.2);
+    .assign-row.active {
+      background-color: #fff0f0;
+      border-color: #ff6b6b;
+    }
+    .assign-row.all-active {
+      background-color: #e6f2ff;
+      border-color: #0056b3;
+    }
+    
+    /* ＋ / − ボタン */
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background-color: #e2e8f0;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
+    }
+    .qty-btn.plus {
+      background-color: #ff6b6b;
+      color: white;
     }
     
     .btn {
@@ -170,7 +198,6 @@
     <div class="section">
       <div class="section-title">2. レシート仕分け</div>
       <button class="btn btn-secondary" onclick="loadDummyReceipt()" style="margin-bottom: 12px;">📸 レシートを読み込む（テスト用）</button>
-      
       <div id="receiptItemsArea"></div>
     </div>
 
@@ -209,45 +236,45 @@
         return;
       }
       
-      // 数量が含まれたリアルなダミーデータ（assigneesに誰が払うかを配列で記録）
+      // データ構造を変更。assignTypeと、誰がいくつ飲んだかを記録するcustomAssignを用意
       receiptItems = [
-        { name: "生ビール 3点", price: 1650, assignees: ["all"] },
-        { name: "牛すじ煮込み", price: 680, assignees: ["all"] },
-        { name: "ウーロン茶 2点", price: 600, assignees: ["all"] },
-        { name: "刺身盛り合わせ", price: 2400, assignees: ["all"] },
-        { name: "レモンサワー 1点", price: 450, assignees: ["all"] }
+        { name: "生ビール 3点", price: 1650, assignType: "all", customAssign: {} },
+        { name: "牛すじ煮込み", price: 680, assignType: "all", customAssign: {} },
+        { name: "ウーロン茶 2点", price: 600, assignType: "all", customAssign: {} },
+        { name: "刺身盛り合わせ", price: 2400, assignType: "all", customAssign: {} },
+        { name: "レモンサワー 1点", price: 450, assignType: "all", customAssign: {} }
       ];
       updateUI();
     }
 
-    // --- 仕分けチェックボックスが押された時の処理 ---
-    function toggleAssign(itemIndex, value, isChecked) {
+    // --- 数量の変更（＋ / −）が押された時の処理 ---
+    function updateQty(itemIndex, memberIndex, delta) {
       let item = receiptItems[itemIndex];
+      let currentQty = item.customAssign[memberIndex] || 0;
+      let newQty = currentQty + delta;
       
-      if (value === 'all') {
-        if (isChecked) {
-          // 「全員」にチェックを入れたら、個人のチェックは全て外す
-          item.assignees = ['all'];
-        } else {
-          item.assignees = []; 
-        }
+      // マイナスにはならないようにする
+      if (newQty < 0) newQty = 0;
+      
+      item.customAssign[memberIndex] = newQty;
+      
+      // 1人でも数量が1以上なら「個別割り勘」、全員0なら「全員割り勘（ごはん）」に戻す
+      let totalCustomQty = Object.values(item.customAssign).reduce((sum, val) => sum + val, 0);
+      
+      if (totalCustomQty > 0) {
+        item.assignType = "custom";
       } else {
-        if (isChecked) {
-          // 個人にチェックを入れたら、「全員」のチェックを外す
-          item.assignees = item.assignees.filter(a => a !== 'all');
-          item.assignees.push(value);
-        } else {
-          // チェックを外す
-          item.assignees = item.assignees.filter(a => a !== value);
-        }
-      }
-      
-      // もし全員のチェックが外れて空っぽになったら、安全のために「全員」に戻す
-      if (item.assignees.length === 0) {
-        item.assignees = ['all'];
+        item.assignType = "all";
       }
       
       updateUI(); // 画面を再描画
+    }
+
+    // --- 強制的に「全員割り勘」に戻すボタンの処理 ---
+    function setAllAssign(itemIndex) {
+      receiptItems[itemIndex].assignType = "all";
+      receiptItems[itemIndex].customAssign = {}; // 個別の数量をリセット
+      updateUI();
     }
 
     // --- 画面の更新 ---
@@ -262,23 +289,30 @@
       receiptArea.innerHTML = "";
       
       receiptItems.forEach((item, index) => {
-        // 全員チェックボックス
-        let isAllChecked = item.assignees.includes('all') ? 'checked' : '';
+        let isAll = item.assignType === "all";
+
+        // 「全員割り勘」ボタン行
         let optionsHTML = `
-          <label class="assign-label" style="${isAllChecked ? 'background-color: #e6f2ff; border-color: #0056b3;' : ''}">
-            <input type="checkbox" onchange="toggleAssign(${index}, 'all', this.checked)" ${isAllChecked}>
-            🍚 全員
-          </label>
+          <div class="assign-row ${isAll ? 'all-active' : ''}" onclick="setAllAssign(${index})" style="cursor: pointer;">
+            <span style="font-weight: ${isAll ? 'bold' : 'normal'};">🍚 全員で割り勘（ごはんなど）</span>
+            ${isAll ? '<span>✅</span>' : ''}
+          </div>
         `;
         
-        // 個人チェックボックス
+        // 個人ごとの ＋ / − 行
         members.forEach((name, memberIdx) => {
-          let isMemberChecked = item.assignees.includes(String(memberIdx)) ? 'checked' : '';
+          let qty = item.customAssign[memberIdx] || 0;
+          let isCustom = (!isAll && qty > 0);
+          
           optionsHTML += `
-            <label class="assign-label" style="${isMemberChecked ? 'background-color: #fff0f0; border-color: #ff6b6b;' : ''}">
-              <input type="checkbox" onchange="toggleAssign(${index}, '${memberIdx}', this.checked)" ${isMemberChecked}>
-              🍺 ${name}
-            </label>
+            <div class="assign-row ${isCustom ? 'active' : ''}">
+              <span>🍺 ${name}</span>
+              <div class="qty-controls">
+                <button class="qty-btn" onclick="updateQty(${index}, ${memberIdx}, -1)">-</button>
+                <span style="font-weight: bold; width: 16px; text-align: center;">${qty}</span>
+                <button class="qty-btn plus" onclick="updateQty(${index}, ${memberIdx}, 1)">+</button>
+              </div>
+            </div>
           `;
         });
 
@@ -296,7 +330,7 @@
       });
     }
 
-    // --- 割り勘計算ロジック ---
+    // --- 割り勘計算ロジック（割合計算） ---
     function calculate() {
       if (members.length === 0 || receiptItems.length === 0) {
         alert("メンバーの追加とレシートの読み込みを行ってください。");
@@ -304,7 +338,6 @@
       }
 
       let sharedFoodTotal = 0;
-      
       let results = members.map(name => ({
         name: name,
         drinkTotal: 0,
@@ -313,16 +346,27 @@
 
       // 仕分け結果を集計
       receiptItems.forEach(item => {
-        if (item.assignees.includes("all")) {
-          // 全員割り勘のごはん代
+        if (item.assignType === "all") {
           sharedFoodTotal += item.price;
         } else {
-          // ★選ばれた人たちで均等割り★
-          const splitPrice = Math.ceil(item.price / item.assignees.length);
-          item.assignees.forEach(memberIdxStr => {
-            const memberIndex = parseInt(memberIdxStr, 10);
-            results[memberIndex].drinkTotal += splitPrice;
-          });
+          // 「＋」された合計数を計算（例：Aさんが2、Bさんが1なら合計3）
+          let totalQty = Object.values(item.customAssign).reduce((sum, val) => sum + val, 0);
+          
+          if (totalQty > 0) {
+            // 各メンバーの数量に応じて金額を分配（端数は切り上げ）
+            for (let memberIdxStr in item.customAssign) {
+              let qty = item.customAssign[memberIdxStr];
+              if (qty > 0) {
+                let memberIndex = parseInt(memberIdxStr, 10);
+                // 金額 × (自分が飲んだ数 / 全体の数)
+                let portionPrice = Math.ceil(item.price * (qty / totalQty));
+                results[memberIndex].drinkTotal += portionPrice;
+              }
+            }
+          } else {
+            // 万が一数量が0なら全員割り勘に回す
+            sharedFoodTotal += item.price;
+          }
         }
       });
 
@@ -337,7 +381,7 @@
         resultList.innerHTML += `
           <li style="flex-direction: column; align-items: flex-start;">
             <div class="result-item">${res.name}： ${res.totalAmount.toLocaleString()} 円</div>
-            <div class="result-detail">（内訳: ごはん ${foodPerPerson.toLocaleString()}円 ＋ 飲み物 ${res.drinkTotal.toLocaleString()}円）</div>
+            <div class="result-detail">（内訳: ごはん ${foodPerPerson.toLocaleString()}円 ＋ 個別 ${res.drinkTotal.toLocaleString()}円）</div>
           </li>
         `;
       });
