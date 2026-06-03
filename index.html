@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>居酒屋割り勘アプリ</title>
   <style>
+    /* （前回までのスタイルと同じです） */
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: #f3f4f6;
@@ -80,8 +81,6 @@
       line-height: 1;
       padding: 0 4px;
     }
-    
-    /* レシート仕分けの数量カウンターデザイン */
     .receipt-item {
       background-color: #f8f9fa;
       border: 1px solid #ddd;
@@ -119,8 +118,6 @@
       background-color: #e6f2ff;
       border-color: #0056b3;
     }
-    
-    /* ＋ / − ボタン */
     .qty-controls {
       display: flex;
       align-items: center;
@@ -144,7 +141,6 @@
       background-color: #ff6b6b;
       color: white;
     }
-    
     .btn {
       display: block;
       width: 100%;
@@ -160,6 +156,25 @@
     .btn-secondary {
       background-color: #6c757d;
       margin-top: 0;
+    }
+    
+    /* ★追加：プレビュー画像とローディングのスタイル★ */
+    #imagePreviewArea {
+      display: none;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    #imagePreviewArea img {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #loadingMessage {
+      display: none;
+      text-align: center;
+      color: #0056b3;
+      font-weight: bold;
+      margin-bottom: 16px;
     }
     
     #resultArea {
@@ -197,7 +212,17 @@
 
     <div class="section">
       <div class="section-title">2. レシート仕分け</div>
-      <button class="btn btn-secondary" onclick="loadDummyReceipt()" style="margin-bottom: 12px;">📸 レシートを読み込む（テスト用）</button>
+      
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(event)">
+      
+      <button class="btn btn-secondary" onclick="document.getElementById('cameraInput').click()" style="margin-bottom: 12px;">📸 レシートを撮影して読み込む</button>
+      
+      <div id="imagePreviewArea">
+        <img id="receiptImagePreview" src="" alt="レシートプレビュー">
+      </div>
+
+      <div id="loadingMessage">⏳ AIがレシートを解析中...</div>
+
       <div id="receiptItemsArea"></div>
     </div>
 
@@ -229,14 +254,38 @@
       updateUI();
     }
 
-    // --- レシート読み込み（ダミー） ---
-    function loadDummyReceipt() {
+    // --- ★追加：カメラで撮影した時の処理★ ---
+    function handleImageUpload(event) {
       if (members.length === 0) {
         alert("先にメンバーを登録してください！");
+        event.target.value = ""; // 入力をリセット
         return;
       }
-      
-      // データ構造を変更。assignTypeと、誰がいくつ飲んだかを記録するcustomAssignを用意
+
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // 1. 画像を画面に表示する
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('receiptImagePreview').src = e.target.result;
+        document.getElementById('imagePreviewArea').style.display = 'block';
+        
+        // 2. 解析中のメッセージを出す
+        document.getElementById('loadingMessage').style.display = 'block';
+        document.getElementById('receiptItemsArea').innerHTML = ""; // リストを一度消す
+        
+        // 3. AIの読み取りを「フリ」でシミュレーション（約2秒待つ）
+        setTimeout(() => {
+          simulateAIOCR();
+        }, 2000);
+      }
+      reader.readAsDataURL(file);
+    }
+
+    // --- AI読み取り（シミュレーション） ---
+    function simulateAIOCR() {
+      // 実際はここでAIに画像を送信し、結果を受け取ります。今回はダミーデータを使います。
       receiptItems = [
         { name: "生ビール 3点", price: 1650, assignType: "all", customAssign: {} },
         { name: "牛すじ煮込み", price: 680, assignType: "all", customAssign: {} },
@@ -244,6 +293,9 @@
         { name: "刺身盛り合わせ", price: 2400, assignType: "all", customAssign: {} },
         { name: "レモンサワー 1点", price: 450, assignType: "all", customAssign: {} }
       ];
+      
+      // 解析中メッセージを消して、リストを表示する
+      document.getElementById('loadingMessage').style.display = 'none';
       updateUI();
     }
 
@@ -253,27 +305,23 @@
       let currentQty = item.customAssign[memberIndex] || 0;
       let newQty = currentQty + delta;
       
-      // マイナスにはならないようにする
       if (newQty < 0) newQty = 0;
       
       item.customAssign[memberIndex] = newQty;
       
-      // 1人でも数量が1以上なら「個別割り勘」、全員0なら「全員割り勘（ごはん）」に戻す
       let totalCustomQty = Object.values(item.customAssign).reduce((sum, val) => sum + val, 0);
-      
       if (totalCustomQty > 0) {
         item.assignType = "custom";
       } else {
         item.assignType = "all";
       }
-      
-      updateUI(); // 画面を再描画
+      updateUI();
     }
 
-    // --- 強制的に「全員割り勘」に戻すボタンの処理 ---
+    // --- 強制的に「全員割り勘」に戻す ---
     function setAllAssign(itemIndex) {
       receiptItems[itemIndex].assignType = "all";
-      receiptItems[itemIndex].customAssign = {}; // 個別の数量をリセット
+      receiptItems[itemIndex].customAssign = {};
       updateUI();
     }
 
@@ -291,7 +339,6 @@
       receiptItems.forEach((item, index) => {
         let isAll = item.assignType === "all";
 
-        // 「全員割り勘」ボタン行
         let optionsHTML = `
           <div class="assign-row ${isAll ? 'all-active' : ''}" onclick="setAllAssign(${index})" style="cursor: pointer;">
             <span style="font-weight: ${isAll ? 'bold' : 'normal'};">🍚 全員で割り勘（ごはんなど）</span>
@@ -299,7 +346,6 @@
           </div>
         `;
         
-        // 個人ごとの ＋ / − 行
         members.forEach((name, memberIdx) => {
           let qty = item.customAssign[memberIdx] || 0;
           let isCustom = (!isAll && qty > 0);
@@ -338,33 +384,23 @@
       }
 
       let sharedFoodTotal = 0;
-      let results = members.map(name => ({
-        name: name,
-        drinkTotal: 0,
-        totalAmount: 0
-      }));
+      let results = members.map(name => ({ name: name, drinkTotal: 0, totalAmount: 0 }));
 
-      // 仕分け結果を集計
       receiptItems.forEach(item => {
         if (item.assignType === "all") {
           sharedFoodTotal += item.price;
         } else {
-          // 「＋」された合計数を計算（例：Aさんが2、Bさんが1なら合計3）
           let totalQty = Object.values(item.customAssign).reduce((sum, val) => sum + val, 0);
-          
           if (totalQty > 0) {
-            // 各メンバーの数量に応じて金額を分配（端数は切り上げ）
             for (let memberIdxStr in item.customAssign) {
               let qty = item.customAssign[memberIdxStr];
               if (qty > 0) {
                 let memberIndex = parseInt(memberIdxStr, 10);
-                // 金額 × (自分が飲んだ数 / 全体の数)
                 let portionPrice = Math.ceil(item.price * (qty / totalQty));
                 results[memberIndex].drinkTotal += portionPrice;
               }
             }
           } else {
-            // 万が一数量が0なら全員割り勘に回す
             sharedFoodTotal += item.price;
           }
         }
