@@ -254,6 +254,48 @@
       font-size: 14px;
       cursor: pointer;
     }
+
+    /* ★追加：オリジナルポップアップ（モーダル）のスタイル★ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5); /* 背景を少し暗くする */
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: #ffffff;
+      padding: 24px;
+      border-radius: 12px;
+      width: 80%;
+      max-width: 320px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .modal-message {
+      font-size: 15px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+      white-space: pre-wrap; /* 改行を反映させる */
+      line-height: 1.5;
+    }
+    .modal-close-btn {
+      background-color: #0056b3;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -315,6 +357,14 @@
     </div>
   </div>
 
+  <!-- ★追加：オリジナルポップアップ（モーダル）のHTML★ -->
+  <div id="customModal" class="modal-overlay">
+    <div class="modal-content">
+      <div id="modalMessage" class="modal-message"></div>
+      <button class="modal-close-btn" onclick="closeModal()">OK</button>
+    </div>
+  </div>
+
   <script>
     let members = [];
     let receiptItems = [];
@@ -322,6 +372,17 @@
     // 計算後に使う一時保存用の変数
     let globalSharedFood = 0;
     let globalDrinks = [];
+
+    // --- ★追加：ポップアップ表示用関数★ ---
+    function showModal(message) {
+      document.getElementById('modalMessage').textContent = message;
+      document.getElementById('customModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('customModal').style.display = 'none';
+    }
+    // ------------------------------------
 
     window.onload = function() {
       const savedKey = localStorage.getItem('geminiApiKey');
@@ -338,7 +399,7 @@
         status.style.display = 'inline';
         setTimeout(() => status.style.display = 'none', 2000);
       } else {
-        alert("APIキーを入力してください。");
+        showModal("APIキーを入力してください。"); // ★変更
       }
     }
 
@@ -360,7 +421,7 @@
     // カメラ起動用
     function triggerCamera() {
       if (members.length === 0) {
-        alert("🚨 メンバーが登録されていません！");
+        showModal("🚨 メンバーが登録されていません！"); // ★変更
         return;
       }
       document.getElementById('cameraInput').click();
@@ -369,7 +430,7 @@
     // アルバム起動用
     function triggerGallery() {
       if (members.length === 0) {
-        alert("🚨 メンバーが登録されていません！");
+        showModal("🚨 メンバーが登録されていません！"); // ★変更
         return;
       }
       document.getElementById('galleryInput').click();
@@ -378,7 +439,7 @@
     async function handleImageUpload(event) {
       const apiKey = localStorage.getItem('geminiApiKey');
       if (!apiKey) {
-        alert("一番上の設定欄にGemini APIキーを入力して保存してください！");
+        showModal("一番上の設定欄にGemini APIキーを入力して保存してください！"); // ★変更
         event.target.value = "";
         return;
       }
@@ -434,7 +495,7 @@
           customAssign: {}
         }));
       } catch (error) {
-        alert("画像の読み取りに失敗しました。");
+        showModal("画像の読み取りに失敗しました。"); // ★変更
       } finally {
         document.getElementById('loadingMessage').style.display = 'none';
         updateUI();
@@ -461,7 +522,6 @@
     }
 
     function updateUI() {
-      // 傾斜設定は結果画面に移動したため、メンバーリストはシンプルに表示
       const memberList = document.getElementById('memberList');
       memberList.innerHTML = "";
       members.forEach((m, index) => {
@@ -496,14 +556,12 @@
       });
     }
 
-    // --- ★1. ボタン押下時の集計処理（税金の加算）★ ---
     function calculate() {
       if (members.length === 0 || receiptItems.length === 0) {
-        alert("レシートを読み込んで仕分けを行ってください。");
+        showModal("レシートを読み込んで仕分けを行ってください。"); // ★変更
         return;
       }
 
-      // 税金の設定を読み取る（外税なら1.1倍）
       let isOuterTax = document.querySelector('input[name="taxType"]:checked').value === "outer";
       let taxMultiplier = isOuterTax ? 1.1 : 1.0;
 
@@ -530,11 +588,9 @@
         }
       });
 
-      // 税金を適用した合計金額をグローバル変数に保存（結果画面で使い回すため）
       globalSharedFood = Math.ceil(sharedFoodBase * taxMultiplier);
       globalDrinks = drinksBase.map(d => Math.ceil(d * taxMultiplier));
 
-      // 結果の描画を呼び出す
       renderResults();
       
       const resultArea = document.getElementById('resultArea');
@@ -542,10 +598,9 @@
       resultArea.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // --- ★2. 結果画面の描画処理（リアルタイム再計算）★ ---
     function updateResultWeight(index, value) {
       members[index].weight = parseFloat(value);
-      renderResults(); // 傾斜が変わったらここだけやり直す
+      renderResults(); 
     }
 
     function renderResults() {
@@ -566,7 +621,6 @@
         let personTotal = foodPortion + drinkTotal;
         finalGrandTotal += personTotal;
 
-        // 結果リストの中に「傾斜ドロップダウン」を埋め込む
         resultList.innerHTML += `
           <li style="flex-direction: column; align-items: flex-start; background-color: #fff; border: 1px solid #ddd;">
             <div class="result-item">${m.name}： ${personTotal.toLocaleString()} 円</div>
@@ -599,7 +653,7 @@
         link.click();
         screenshotBtn.style.visibility = 'visible';
       }).catch(error => {
-        alert("スクショの保存に失敗しました。");
+        showModal("スクショの保存に失敗しました。"); // ★変更
         screenshotBtn.style.visibility = 'visible';
       });
     }
