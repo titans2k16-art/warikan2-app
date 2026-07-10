@@ -4,39 +4,66 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>スマドリ許すまじ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
+    /* 全体フォントと今っぽい背景色の設定 */
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f3f4f6;
-      color: #333;
+      font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc; /* 青みを含んだ、ガジェット感のある最先端グレー */
+      color: #1e293b;
       margin: 0;
       padding: 16px;
+      -webkit-font-smoothing: antialiased;
     }
+    
+    /* コンテナ：角丸を大きくし、影を広くふんわり、薄くかける */
     .container {
       background-color: #ffffff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.04); /* 今どきの極薄ふんわり影 */
       max-width: 400px;
       margin: 0 auto;
     }
+    
+    /* タイトルまわりの洗練 */
     h1 {
-      font-size: 20px;
+      font-size: 22px;
+      font-weight: 700;
       text-align: center;
-      color: #0056b3;
-      margin-top: 0;
-    }
-    .section {
+      color: #0f172a; /* 深みのあるスタイリッシュネイビー */
+      margin-top: 8px;
       margin-bottom: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.5px;
     }
+    
+    .section {
+      margin-bottom: 28px;
+    }
+    
+    /* 見出しのデザインを今っぽくシンプルに */
     .section-title {
-      font-size: 16px;
-      font-weight: bold;
-      border-bottom: 2px solid #0056b3;
-      padding-bottom: 4px;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
       margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
+    
+    /* 入力フォームの角丸とフォーカス時の線の美化 */
     .input-group {
       display: flex;
       gap: 8px;
@@ -44,37 +71,57 @@
     }
     .input-group input {
       flex: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 12px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
       font-size: 14px;
+      font-family: inherit;
+      background-color: #f8fafc;
+      transition: all 0.2s;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
     }
     .input-group button {
-      background-color: #0056b3;
+      background-color: #0f172a;
       color: white;
       border: none;
-      border-radius: 6px;
-      padding: 0 16px;
-      font-weight: bold;
+      border-radius: 12px;
+      padding: 0 20px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
     }
     
+    /* APIキー設定エリアのモダン化 */
     .settings-area {
-      background-color: #e9ecef;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      font-size: 12px;
+      background-color: #f1f5f9;
+      padding: 14px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+    .settings-area label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #475569;
     }
     .settings-area input {
       width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      margin-bottom: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 10px;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
       box-sizing: border-box;
+      font-family: inherit;
     }
 
+    /* メンバーリスト */
     .member-list {
       list-style: none;
       padding: 0;
@@ -85,116 +132,157 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: #f8f9fa;
-      padding: 10px 12px;
-      border-radius: 6px;
-      margin-bottom: 6px;
+      background-color: #f8fafc;
+      border: 1px solid #f1f5f9;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 8px;
       font-size: 14px;
+      font-weight: 500;
     }
+    
+    /* 結果画面の傾斜設定用セレクトボックス */
     .weight-select {
-      padding: 4px 6px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      font-size: 13px;
+      font-family: inherit;
+      color: #334155;
       background-color: #fff;
-      margin-top: 6px;
+      margin-top: 8px;
       width: 100%;
+      cursor: pointer;
     }
     .delete-btn {
-      color: #ff4d4f;
+      color: #94a3b8;
       background: none;
       border: none;
-      font-size: 20px;
-      line-height: 1;
+      font-size: 18px;
+      cursor: pointer;
       padding: 0 4px;
+      display: flex;
+      align-items: center;
     }
+    .delete-btn:hover {
+      color: #f43f5e;
+    }
+    
+    /* レシートアイテムのカード化と薄い影 */
     .receipt-item {
-      background-color: #f8f9fa;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 10px;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
     }
     .receipt-item-header {
       display: flex;
       justify-content: space-between;
-      font-weight: bold;
-      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      color: #0f172a;
+      margin-bottom: 12px;
     }
     .assign-area {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      border-top: 1px dashed #ccc;
-      padding-top: 10px;
+      gap: 8px;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 12px;
     }
     .assign-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 8px;
-      border-radius: 6px;
-      background-color: #ffffff;
-      border: 1px solid #eee;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background-color: #f8fafc;
+      border: 1px solid #f1f5f9;
+      font-size: 13px;
+      font-weight: 500;
+      color: #475569;
     }
     .assign-row.active {
-      background-color: #fff0f0;
-      border-color: #ff6b6b;
+      background-color: #fff1f2; /* 個別選択時は淡いローズピンク */
+      border-color: #ffe4e6;
+      color: #e11d48;
     }
     .assign-row.all-active {
-      background-color: #e6f2ff;
-      border-color: #0056b3;
+      background-color: #eff6ff; /* 全員選択時は淡いスタイリッシュブルー */
+      border-color: #dbeafe;
+      color: #1d4ed8;
     }
+    
+    /* 数量コントローラーの美化 */
     .qty-controls {
       display: flex;
       align-items: center;
       gap: 12px;
     }
     .qty-btn {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       border: none;
       background-color: #e2e8f0;
-      font-size: 18px;
-      font-weight: bold;
+      color: #475569;
+      font-size: 16px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      line-height: 1;
-      padding: 0;
+      cursor: pointer;
+      transition: background 0.2s;
     }
     .qty-btn.plus {
-      background-color: #ff6b6b;
+      background-color: #0f172a;
       color: white;
     }
+    
+    /* メインボタンのフラット＆モダン化 */
     .btn {
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       width: 100%;
-      background-color: #ff6b6b;
+      background-color: #e11d48; /* 原色の赤を、高級感のあるコーラルローズに変更 */
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 14px;
       padding: 14px;
-      font-size: 16px;
-      font-weight: bold;
-      margin-top: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 20px;
       cursor: pointer;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.15);
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.98);
     }
     .btn-secondary {
-      background-color: #6c757d;
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #334155;
       margin-top: 0;
+      box-shadow: none;
     }
     .btn-half {
       flex: 1;
       padding: 10px;
-      font-size: 14px;
+      font-size: 13px;
       margin-top: 0;
+      border-radius: 10px;
     }
     .btn-screenshot {
-      background-color: #28a745; 
-      margin-top: 12px;
+      background-color: #10b981; /* 綺麗なエメラルドグリーン */
+      margin-top: 16px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
     }
+    
     #imagePreviewArea {
       display: none;
       text-align: center;
@@ -202,56 +290,68 @@
     }
     #imagePreviewArea img {
       max-width: 100%;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
     }
     #loadingMessage {
       display: none;
       text-align: center;
-      color: #0056b3;
-      font-weight: bold;
+      color: #2563eb;
+      font-weight: 700;
+      font-size: 14px;
       margin-bottom: 16px;
     }
+    
+    /* 結果表示エリアの美化 */
     #resultArea {
       display: none;
-      margin-top: 24px;
-      padding: 16px;
-      background-color: #fff0f0;
-      border: 2px solid #ff6b6b;
-      border-radius: 8px;
+      margin-top: 28px;
+      padding: 20px;
+      background-color: #fff1f2;
+      border: 1px solid #ffe4e6;
+      border-radius: 18px;
     }
     .result-item {
       font-size: 16px;
-      font-weight: bold;
+      font-weight: 700;
+      color: #0f172a;
       margin-bottom: 4px;
     }
     .result-detail {
       font-size: 12px;
-      color: #666;
+      color: #64748b;
     }
     .result-summary {
-      margin-top: 16px;
-      padding-top: 12px;
-      border-top: 2px dashed #ff6b6b;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 2px dashed #fda4af;
       font-size: 18px;
-      font-weight: bold;
+      font-weight: 700;
       text-align: center;
-      color: #d9534f;
+      color: #e11d48;
     }
+    
+    /* 税金設定のモダン化 */
     .tax-setting {
       display: flex;
       justify-content: space-between;
-      background: #fff;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
+      background: #f8fafc;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
       margin-bottom: 16px;
     }
     .tax-setting label {
-      font-weight: bold;
+      font-weight: 500;
       font-size: 14px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #475569;
     }
+    
+    /* オリジナルポップアップ */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -259,36 +359,37 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(15, 23, 42, 0.4);
       z-index: 9999;
       justify-content: center;
       align-items: center;
+      backdrop-filter: blur(4px); /* すりガラス効果 */
     }
     .modal-content {
       background-color: #ffffff;
       padding: 24px;
-      border-radius: 12px;
+      border-radius: 20px;
       width: 80%;
-      max-width: 320px;
+      max-width: 300px;
       text-align: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
     }
     .modal-message {
-      font-size: 15px;
-      font-weight: bold;
-      color: #333;
+      font-size: 14px;
+      font-weight: 500;
+      color: #334155;
       margin-bottom: 20px;
       white-space: pre-wrap;
-      line-height: 1.5;
+      line-height: 1.6;
     }
     .modal-close-btn {
-      background-color: #0056b3;
+      background-color: #0f172a;
       color: white;
       border: none;
-      border-radius: 6px;
-      padding: 10px 24px;
-      font-size: 16px;
-      font-weight: bold;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 700;
       cursor: pointer;
       width: 100%;
     }
@@ -297,17 +398,27 @@
 <body>
 
   <div class="container" id="appContainer">
-    <h1>🫗スマドリ許すまじ🫗</h1>
+    <h1>
+      <span class="material-symbols-outlined" style="font-size: 26px; color: #e11d48;">local_bar</span>
+      スマドリ許すまじ
+      <span class="material-symbols-outlined" style="font-size: 26px; color: #e11d48;">local_bar</span>
+    </h1>
 
     <div class="settings-area">
-      <label for="apiKeyInput"><strong>⚙️ Gemini APIキー</strong> (初回のみ入力)</label>
+      <label for="apiKeyInput">
+        <span class="material-symbols-outlined">settings</span>
+        <strong>Gemini APIキー</strong> (初回のみ入力)
+      </label>
       <input type="password" id="apiKeyInput" placeholder="AQ. から始まるキーを入力">
-      <button onclick="saveApiKey()" style="padding: 6px 12px; background: #333; color: white; border: none; border-radius: 4px;">保存する</button>
-      <span id="apiKeyStatus" style="color: green; display: none; margin-left: 8px;">保存しました！</span>
+      <button onclick="saveApiKey()">保存</button>
+      <span id="apiKeyStatus" style="color: #10b981; display: none; margin-left: 8px; font-weight: bold;">保存しました！</span>
     </div>
 
     <div class="section">
-      <div class="section-title">1. メンバー登録</div>
+      <div class="section-title">
+        <span class="material-symbols-outlined">group_add</span>
+        1. メンバー登録
+      </div>
       <div class="input-group">
         <input type="text" id="memberName" placeholder="名前（例：山田）">
         <button onclick="addMember()">追加</button>
@@ -316,14 +427,21 @@
     </div>
 
     <div class="section">
-      <div class="section-title">2. レシート仕分け</div>
+      <div class="section-title">
+        <span class="material-symbols-outlined">receipt_long</span>
+        2. レシート仕分け
+      </div>
       
       <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(event)">
       <input type="file" id="galleryInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
       
       <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-        <button class="btn btn-secondary btn-half" onclick="triggerCamera()">📸 カメラ起動</button>
-        <button class="btn btn-secondary btn-half" onclick="triggerGallery()">📁 アルバム選択</button>
+        <button class="btn btn-secondary btn-half" onclick="triggerCamera()">
+          <span class="material-symbols-outlined">photo_camera</span>カメラ起動
+        </button>
+        <button class="btn btn-secondary btn-half" onclick="triggerGallery()">
+          <span class="material-symbols-outlined">image</span>アルバム選択
+        </button>
       </div>
       
       <div id="imagePreviewArea">
@@ -335,28 +453,45 @@
       <div id="receiptItemsArea"></div>
     </div>
 
-    <div class="section-title">3. 計算設定</div>
+    <div class="section-title">
+      <span class="material-symbols-outlined">tune</span>
+      3. 計算設定
+    </div>
     <div class="tax-setting">
-      <label><input type="radio" name="taxType" value="inner" checked> 🤦 内税（そのまま）</label>
-      <label><input type="radio" name="taxType" value="outer"> 🙋 外税（＋10%）</label>
+      <label>
+        <input type="radio" name="taxType" value="inner" checked>
+        <span class="material-symbols-outlined">payments</span>内税（そのまま）
+      </label>
+      <label>
+        <input type="radio" name="taxType" value="outer">
+        <span class="material-symbols-outlined">add_card</span>外税（＋10%）
+      </label>
     </div>
 
-    <button class="btn" onclick="calculate()">💰 割り勘を計算する</button>
+    <button class="btn" onclick="calculate()">
+      <span class="material-symbols-outlined">calculate</span>割り勘を計算する
+    </button>
 
     <div id="resultArea">
-      <h2 style="font-size: 18px; margin-top: 0; color: #ff6b6b; text-align: center;">お会計結果</h2>
-      <div style="font-size: 12px; color: #666; text-align: center; margin-bottom: 12px;">💡 ここで「ごはん代」の比率を調整できます</div>
+      <h2 style="font-size: 16px; font-weight: 700; margin-top: 0; color: #0f172a; text-align: center; display: flex; justify-content: center; align-items: center; gap: 4px;">
+        <span class="material-symbols-outlined" style="color: #e11d48;">analytics</span>お会計結果
+      </h2>
+      <div style="font-size: 12px; color: #64748b; text-align: center; margin-bottom: 16px; display: flex; justify-content: center; align-items: center; gap: 2px;">
+        <span class="material-symbols-outlined" style="font-size: 14px;">lightbulb</span>ここで「ごはん代」の比率を調整できます
+      </div>
       
       <ul class="member-list" id="resultList"></ul>
       <div id="resultSummary" class="result-summary"></div>
-      <button class="btn btn-screenshot" onclick="takeScreenshot()">📸 画面をスクショ保存する</button>
+      <button class="btn btn-screenshot" onclick="takeScreenshot()">
+        <span class="material-symbols-outlined">download_via_screenshot</span>画面をスクショ保存する
+      </button>
     </div>
   </div>
 
   <div id="customModal" class="modal-overlay">
     <div class="modal-content">
       <div id="modalMessage" class="modal-message"></div>
-      <button class="modal-close-btn" onclick="closeModal()">OK</button>
+      <button class="modal-close-btn" onclick="closeModal()">閉じる</button>
     </div>
   </div>
 
@@ -364,7 +499,6 @@
     let members = [];
     let receiptItems = [];
 
-    // ★変更：計算ロジック用（端数を出さないための正確なベース変数）
     let globalSharedFoodBase = 0;
     let globalDrinksBase = [];
     let globalTaxMultiplier = 1.0;
@@ -408,6 +542,7 @@
       }
     }
 
+    // （以下、計算ロジックや仕分けシステムは「完璧な端数調整版」をそのまま継承）
     function deleteMember(index) {
       members.splice(index, 1);
       updateUI();
@@ -415,7 +550,7 @@
 
     function triggerCamera() {
       if (members.length === 0) {
-        showModal("🚨 メンバーが登録されていません！");
+        showModal("メンバーが登録されていません。一番上のフォームから名前を追加してください。");
         return;
       }
       document.getElementById('cameraInput').click();
@@ -423,7 +558,7 @@
 
     function triggerGallery() {
       if (members.length === 0) {
-        showModal("🚨 メンバーが登録されていません！");
+        showModal("メンバーが登録されていません。一番上のフォームから名前を追加してください。");
         return;
       }
       document.getElementById('galleryInput').click();
@@ -432,7 +567,7 @@
     async function handleImageUpload(event) {
       const apiKey = localStorage.getItem('geminiApiKey');
       if (!apiKey) {
-        showModal("一番上の設定欄にGemini APIキーを入力して保存してください！");
+        showModal("設定欄にGemini APIキーを入力して保存してください。");
         event.target.value = "";
         return;
       }
@@ -488,7 +623,7 @@
           customAssign: {}
         }));
       } catch (error) {
-        showModal("画像の読み取りに失敗しました。");
+        showModal("画像の読み取りに失敗しました。明るい場所で撮り直すか、スクショでお試しください。");
       } finally {
         document.getElementById('loadingMessage').style.display = 'none';
         updateUI();
@@ -518,7 +653,11 @@
       const memberList = document.getElementById('memberList');
       memberList.innerHTML = "";
       members.forEach((m, index) => {
-        memberList.innerHTML += `<li><span>👤 ${m.name}</span><button class="delete-btn" onclick="deleteMember(${index})">×</button></li>`;
+        memberList.innerHTML += `
+          <li>
+            <span style="display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="color:#64748b;">person</span>${m.name}</span>
+            <button class="delete-btn" onclick="deleteMember(${index})"><span class="material-symbols-outlined">close</span></button>
+          </li>`;
       });
 
       const receiptArea = document.getElementById('receiptItemsArea');
@@ -527,8 +666,10 @@
         let isAll = item.assignType === "all";
         let optionsHTML = `
           <div class="assign-row ${isAll ? 'all-active' : ''}" onclick="setAllAssign(${index})" style="cursor: pointer;">
-            <span style="font-weight: ${isAll ? 'bold' : 'normal'};">🍚 全員で割り勘（ごはんなど）</span>
-            ${isAll ? '<span>✅</span>' : ''}
+            <span style="display:flex; align-items:center; gap:4px; font-weight: ${isAll ? '700' : '500'};">
+              <span class="material-symbols-outlined" style="font-size:18px;">restaurant</span>全員で割り勘（ごはんなど）
+            </span>
+            ${isAll ? '<span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>' : ''}
           </div>
         `;
         members.forEach((m, memberIdx) => {
@@ -536,10 +677,10 @@
           let isCustom = (!isAll && qty > 0);
           optionsHTML += `
             <div class="assign-row ${isCustom ? 'active' : ''}">
-              <span>🍺 ${m.name}</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:18px;">sports_bar</span>${m.name}</span>
               <div class="qty-controls">
                 <button class="qty-btn" onclick="updateQty(${index}, ${memberIdx}, -1)">-</button>
-                <span style="font-weight: bold; width: 16px; text-align: center;">${qty}</span>
+                <span style="font-weight: 700; width: 16px; text-align: center;">${qty}</span>
                 <button class="qty-btn plus" onclick="updateQty(${index}, ${memberIdx}, 1)">+</button>
               </div>
             </div>
@@ -549,7 +690,6 @@
       });
     }
 
-    // --- ★1. ボタン押下時の集計処理（端数を出さない準備）★ ---
     function calculate() {
       if (members.length === 0 || receiptItems.length === 0) {
         showModal("レシートを読み込んで仕分けを行ってください。");
@@ -561,7 +701,7 @@
 
       globalSharedFoodBase = 0;
       globalDrinksBase = members.map(() => 0);
-      let rawTotal = 0; // レシート記載の純粋な合計金額
+      let rawTotal = 0;
 
       receiptItems.forEach(item => {
         rawTotal += item.price;
@@ -574,7 +714,6 @@
               let qty = item.customAssign[memberIdxStr];
               if (qty > 0) {
                 let memberIndex = parseInt(memberIdxStr, 10);
-                // 途中で切り上げず、正確な小数点のまま記録する
                 let portionPrice = item.price * (qty / totalQty);
                 globalDrinksBase[memberIndex] += portionPrice;
               }
@@ -585,9 +724,7 @@
         }
       });
 
-      // 目指すべき「絶対にズレてはいけない総合計金額（税込み）」を確定させる
       globalTargetTotal = Math.round(rawTotal * globalTaxMultiplier);
-
       renderResults();
       
       const resultArea = document.getElementById('resultArea');
@@ -595,7 +732,6 @@
       resultArea.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // --- ★2. 結果画面の描画処理（完璧な端数調整ロジック）★ ---
     function updateResultWeight(index, value) {
       members[index].weight = parseFloat(value);
       renderResults(); 
@@ -613,7 +749,6 @@
       let drinkPortions = [];
       let currentSum = 0;
 
-      // まず全員の「切り捨て」金額を計算する
       members.forEach((m, index) => {
         let exactFoodBase = 0;
         if (totalWeight > 0 && m.weight > 0) {
@@ -628,27 +763,22 @@
         
         let personTotal = foodPortion + drinkPortion;
         finalAmounts.push(personTotal);
-        currentSum += personTotal; // 全員の切り捨て合計
+        currentSum += personTotal;
       });
 
-      // レシート本来の合計との差額（端数）を割り出す
       let remainder = globalTargetTotal - currentSum;
-      
-      // 端数が出た場合は、1人目（幹事さん）にすべて寄せる
       let adjustAmounts = new Array(members.length).fill(0);
       if (remainder !== 0 && members.length > 0) {
         adjustAmounts[0] = remainder;
         finalAmounts[0] += remainder;
       }
 
-      // 画面の生成
       members.forEach((m, index) => {
         let food = foodPortions[index];
         let drink = drinkPortions[index];
         let adjust = adjustAmounts[index];
         let total = finalAmounts[index];
 
-        // 端数調整がある時だけ内訳に文字を追加する
         let breakdownStr = `（内訳: ごはん ${food.toLocaleString()}円 ＋ 個別 ${drink.toLocaleString()}円`;
         if (adjust !== 0) {
           let sign = adjust > 0 ? '＋' : '－';
@@ -657,7 +787,7 @@
         breakdownStr += `）`;
 
         resultList.innerHTML += `
-          <li style="flex-direction: column; align-items: flex-start; background-color: #fff; border: 1px solid #ddd;">
+          <li style="flex-direction: column; align-items: flex-start; background-color: #fff; border: 1px solid #e2e8f0;">
             <div class="result-item">${m.name}： ${total.toLocaleString()} 円</div>
             <div class="result-detail" style="margin-bottom: 8px;">${breakdownStr}</div>
             <select class="weight-select" onchange="updateResultWeight(${index}, this.value)">
@@ -672,16 +802,14 @@
       });
 
       let summaryHTML = `💰 割り勘総合計: ${globalTargetTotal.toLocaleString()} 円`;
-      
-      // ★端数が出た時だけ、特別なメッセージボックスを表示する★
       if (remainder !== 0) {
         summaryHTML += `
-          <div style="font-size: 13px; color: #0056b3; background-color: #e6f2ff; padding: 10px; border-radius: 6px; margin-top: 12px; font-weight: normal; text-align: left; line-height: 1.4;">
-            💡 レシートに1円単位でピッタリ合わせるため、生じた端数（${remainder}円）は1人目の「${members[0].name}さん」に寄せて調整しました。
+          <div style="font-size: 13px; color: #1e40af; background-color: #eff6ff; padding: 12px; border-radius: 10px; margin-top: 12px; font-weight: normal; text-align: left; line-height: 1.5; display: flex; gap: 4px; align-items: flex-start; border:1px solid #bfdbfe;">
+            <span class="material-symbols-outlined" style="font-size:18px; margin-top:1px;">info</span>
+            <span>レシートにピッタリ合わせるため、生じた端数（${remainder}円）は1人目の「${members[0].name}さん」に寄せて自動調整しました。</span>
           </div>
         `;
       }
-
       resultSummary.innerHTML = summaryHTML;
     }
 
