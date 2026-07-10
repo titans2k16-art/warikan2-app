@@ -660,4 +660,50 @@
           <li style="flex-direction: column; align-items: flex-start; background-color: #fff; border: 1px solid #ddd;">
             <div class="result-item">${m.name}： ${total.toLocaleString()} 円</div>
             <div class="result-detail" style="margin-bottom: 8px;">${breakdownStr}</div>
-            <select class="weight-select" onchange=
+            <select class="weight-select" onchange="updateResultWeight(${index}, this.value)">
+              <option value="1.0" ${m.weight === 1.0 ? 'selected' : ''}>通常 (1.0)</option>
+              <option value="1.5" ${m.weight === 1.5 ? 'selected' : ''}>多め (1.5)</option>
+              <option value="2.0" ${m.weight === 2.0 ? 'selected' : ''}>上司/主役 (2.0)</option>
+              <option value="0.5" ${m.weight === 0.5 ? 'selected' : ''}>少なめ (0.5)</option>
+              <option value="0.0" ${m.weight === 0.0 ? 'selected' : ''}>ご馳走 (0.0)</option>
+            </select>
+          </li>
+        `;
+      });
+
+      let summaryHTML = `💰 割り勘総合計: ${globalTargetTotal.toLocaleString()} 円`;
+      
+      // ★端数が出た時だけ、特別なメッセージボックスを表示する★
+      if (remainder !== 0) {
+        summaryHTML += `
+          <div style="font-size: 13px; color: #0056b3; background-color: #e6f2ff; padding: 10px; border-radius: 6px; margin-top: 12px; font-weight: normal; text-align: left; line-height: 1.4;">
+            💡 レシートに1円単位でピッタリ合わせるため、生じた端数（${remainder}円）は1人目の「${members[0].name}さん」に寄せて調整しました。
+          </div>
+        `;
+      }
+
+      resultSummary.innerHTML = summaryHTML;
+    }
+
+    function takeScreenshot() {
+      const element = document.getElementById('appContainer');
+      const screenshotBtn = document.querySelector('.btn-screenshot');
+      screenshotBtn.style.visibility = 'hidden';
+
+      html2canvas(element, {
+        scale: 2, useCORS: true, backgroundColor: "#ffffff"
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = '割り勘お会計結果.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        screenshotBtn.style.visibility = 'visible';
+      }).catch(error => {
+        showModal("スクショの保存に失敗しました。");
+        screenshotBtn.style.visibility = 'visible';
+      });
+    }
+  </script>
+
+</body>
+</html>
