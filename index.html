@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>スマドリ許すまじ</title>
+  <!-- ★フォント＆アイコンのプロ仕様ライブラリを読み込み★ -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -398,6 +399,7 @@
 <body>
 
   <div class="container" id="appContainer">
+    <!-- ★絵文字をスタイッシュなWebアイコンへ置き換え★ -->
     <h1>
       <span class="material-symbols-outlined" style="font-size: 26px; color: #e11d48;">local_bar</span>
       スマドリ許すまじ
@@ -482,8 +484,10 @@
       
       <ul class="member-list" id="resultList"></ul>
       <div id="resultSummary" class="result-summary"></div>
+      
+      <!-- ★ココを修正！アイコンを download に変更し、文字を短くしました★ -->
       <button class="btn btn-screenshot" onclick="takeScreenshot()">
-        <span class="material-symbols-outlined">download_via_screenshot</span>画面をスクショ保存する
+        <span class="material-symbols-outlined">download</span>スクショを保存する
       </button>
     </div>
   </div>
@@ -542,7 +546,6 @@
       }
     }
 
-    // （以下、計算ロジックや仕分けシステムは「完璧な端数調整版」をそのまま継承）
     function deleteMember(index) {
       members.splice(index, 1);
       updateUI();
