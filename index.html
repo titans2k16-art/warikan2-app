@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>スマドリ許すまじ</title>
-  <!-- ★フォント＆アイコンのプロ仕様ライブラリを読み込み★ -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -12,32 +11,29 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    /* 全体フォントと今っぽい背景色の設定 */
     body {
       font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #f8fafc; /* 青みを含んだ、ガジェット感のある最先端グレー */
+      background-color: #f8fafc;
       color: #1e293b;
       margin: 0;
       padding: 16px;
       -webkit-font-smoothing: antialiased;
     }
     
-    /* コンテナ：角丸を大きくし、影を広くふんわり、薄くかける */
     .container {
       background-color: #ffffff;
       border-radius: 24px;
       padding: 24px;
-      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.04); /* 今どきの極薄ふんわり影 */
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.04);
       max-width: 400px;
       margin: 0 auto;
     }
     
-    /* タイトルまわりの洗練 */
     h1 {
       font-size: 22px;
       font-weight: 700;
       text-align: center;
-      color: #0f172a; /* 深みのあるスタイリッシュネイビー */
+      color: #0f172a;
       margin-top: 8px;
       margin-bottom: 24px;
       display: flex;
@@ -51,7 +47,6 @@
       margin-bottom: 28px;
     }
     
-    /* 見出しのデザインを今っぽくシンプルに */
     .section-title {
       font-size: 14px;
       font-weight: 700;
@@ -64,7 +59,6 @@
       gap: 6px;
     }
     
-    /* 入力フォームの角丸とフォーカス時の線の美化 */
     .input-group {
       display: flex;
       gap: 8px;
@@ -97,10 +91,10 @@
       cursor: pointer;
     }
     
-    /* APIキー設定エリアのモダン化 */
+    /* APIキー設定エリアの美化とボタン配置 */
     .settings-area {
       background-color: #f1f5f9;
-      padding: 14px;
+      padding: 16px;
       border-radius: 16px;
       margin-bottom: 24px;
       font-size: 13px;
@@ -110,19 +104,52 @@
       align-items: center;
       gap: 4px;
       color: #475569;
+      font-weight: bold;
     }
     .settings-area input {
       width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      margin-bottom: 10px;
+      padding: 12px;
+      margin-top: 8px;
+      margin-bottom: 12px;
       border: 1px solid #cbd5e1;
       border-radius: 10px;
       box-sizing: border-box;
       font-family: inherit;
+      background-color: #ffffff;
+    }
+    /* ★追加：保存ボタンと使い方ボタンを横並びにするレイアウト★ */
+    .settings-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .settings-actions button.save-btn {
+      background-color: #0f172a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .settings-actions button.guide-btn {
+      background-color: transparent;
+      color: #3b82f6;
+      border: none;
+      padding: 0;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .settings-actions button.guide-btn:hover {
+      text-decoration: underline;
     }
 
-    /* メンバーリスト */
     .member-list {
       list-style: none;
       padding: 0;
@@ -142,7 +169,6 @@
       font-weight: 500;
     }
     
-    /* 結果画面の傾斜設定用セレクトボックス */
     .weight-select {
       padding: 8px 10px;
       border-radius: 8px;
@@ -169,7 +195,6 @@
       color: #f43f5e;
     }
     
-    /* レシートアイテムのカード化と薄い影 */
     .receipt-item {
       background-color: #ffffff;
       border: 1px solid #e2e8f0;
@@ -206,17 +231,16 @@
       color: #475569;
     }
     .assign-row.active {
-      background-color: #fff1f2; /* 個別選択時は淡いローズピンク */
+      background-color: #fff1f2;
       border-color: #ffe4e6;
       color: #e11d48;
     }
     .assign-row.all-active {
-      background-color: #eff6ff; /* 全員選択時は淡いスタイリッシュブルー */
+      background-color: #eff6ff;
       border-color: #dbeafe;
       color: #1d4ed8;
     }
     
-    /* 数量コントローラーの美化 */
     .qty-controls {
       display: flex;
       align-items: center;
@@ -242,14 +266,13 @@
       color: white;
     }
     
-    /* メインボタンのフラット＆モダン化 */
     .btn {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
       width: 100%;
-      background-color: #e11d48; /* 原色の赤を、高級感のあるコーラルローズに変更 */
+      background-color: #e11d48;
       color: white;
       border: none;
       border-radius: 14px;
@@ -279,7 +302,7 @@
       border-radius: 10px;
     }
     .btn-screenshot {
-      background-color: #10b981; /* 綺麗なエメラルドグリーン */
+      background-color: #10b981;
       margin-top: 16px;
       box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
     }
@@ -303,7 +326,6 @@
       margin-bottom: 16px;
     }
     
-    /* 結果表示エリアの美化 */
     #resultArea {
       display: none;
       margin-top: 28px;
@@ -332,7 +354,6 @@
       color: #e11d48;
     }
     
-    /* 税金設定のモダン化 */
     .tax-setting {
       display: flex;
       justify-content: space-between;
@@ -352,7 +373,7 @@
       color: #475569;
     }
     
-    /* オリジナルポップアップ */
+    /* モーダル（ポップアップ）のデザイン */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -364,14 +385,14 @@
       z-index: 9999;
       justify-content: center;
       align-items: center;
-      backdrop-filter: blur(4px); /* すりガラス効果 */
+      backdrop-filter: blur(4px);
     }
     .modal-content {
       background-color: #ffffff;
       padding: 24px;
       border-radius: 20px;
-      width: 80%;
-      max-width: 300px;
+      width: 85%;
+      max-width: 320px;
       text-align: center;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
     }
@@ -399,7 +420,6 @@
 <body>
 
   <div class="container" id="appContainer">
-    <!-- ★絵文字をスタイッシュなWebアイコンへ置き換え★ -->
     <h1>
       <span class="material-symbols-outlined" style="font-size: 26px; color: #e11d48;">local_bar</span>
       スマドリ許すまじ
@@ -409,11 +429,17 @@
     <div class="settings-area">
       <label for="apiKeyInput">
         <span class="material-symbols-outlined">settings</span>
-        <strong>Gemini APIキー</strong> (初回のみ入力)
+        Gemini APIキー (初回のみ)
       </label>
       <input type="password" id="apiKeyInput" placeholder="AQ. から始まるキーを入力">
-      <button onclick="saveApiKey()">保存</button>
-      <span id="apiKeyStatus" style="color: #10b981; display: none; margin-left: 8px; font-weight: bold;">保存しました！</span>
+      
+      <div class="settings-actions">
+        <button class="save-btn" onclick="saveApiKey()">保存</button>
+        <button class="guide-btn" onclick="showGuideModal()">
+          <span class="material-symbols-outlined" style="font-size: 18px;">help</span>使い方がわからない方へ
+        </button>
+        <span id="apiKeyStatus" style="color: #10b981; display: none; font-weight: bold; font-size: 13px;">保存完了！</span>
+      </div>
     </div>
 
     <div class="section">
@@ -485,7 +511,6 @@
       <ul class="member-list" id="resultList"></ul>
       <div id="resultSummary" class="result-summary"></div>
       
-      <!-- ★ココを修正！アイコンを download に変更し、文字を短くしました★ -->
       <button class="btn btn-screenshot" onclick="takeScreenshot()">
         <span class="material-symbols-outlined">download</span>スクショを保存する
       </button>
@@ -508,13 +533,44 @@
     let globalTaxMultiplier = 1.0;
     let globalTargetTotal = 0;
 
+    // 通常のテキストメッセージ用モーダル
     function showModal(message) {
       document.getElementById('modalMessage').textContent = message;
       document.getElementById('customModal').style.display = 'flex';
     }
 
+    // ★追加：HTMLタグ（リンクや太字など）を有効にした使い方ガイド用モーダル★
+    function showHtmlModal(htmlContent) {
+      document.getElementById('modalMessage').innerHTML = htmlContent;
+      document.getElementById('customModal').style.display = 'flex';
+    }
+
     function closeModal() {
       document.getElementById('customModal').style.display = 'none';
+    }
+
+    // ★追加：ガイドボタンを押した時の処理★
+    function showGuideModal() {
+      const guideHtml = `
+        <h3 style="margin-top: 0; color: #0f172a; font-size: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px;">APIキーの取得・設定方法</h3>
+        <div style="text-align: left; font-size: 13.5px; color: #475569; line-height: 1.6;">
+          <ol style="padding-left: 20px; margin-bottom: 0;">
+            <li style="margin-bottom: 12px;">
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: none; font-weight: bold;">Google AI Studio <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">open_in_new</span></a> にアクセスします。
+            </li>
+            <li style="margin-bottom: 12px;">
+              Googleアカウントでログインし、画面にある<strong>「Create API key」</strong>という青いボタンを押します。
+            </li>
+            <li style="margin-bottom: 12px;">
+              生成された <strong>AQ.</strong> などの英数字の羅列（キー）をコピーします。
+            </li>
+            <li>
+              この画面の入力欄に貼り付けて「保存」を押せば、準備完了です！
+            </li>
+          </ol>
+        </div>
+      `;
+      showHtmlModal(guideHtml);
     }
 
     window.onload = function() {
@@ -530,7 +586,7 @@
         localStorage.setItem('geminiApiKey', key); 
         const status = document.getElementById('apiKeyStatus');
         status.style.display = 'inline';
-        setTimeout(() => status.style.display = 'none', 2000);
+        setTimeout(() => status.style.display = 'none', 3000); // 消えるまでの時間を3秒に延長
       } else {
         showModal("APIキーを入力してください。");
       }
