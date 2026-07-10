@@ -91,7 +91,6 @@
       cursor: pointer;
     }
     
-    /* APIキー設定エリアの美化とボタン配置 */
     .settings-area {
       background-color: #f1f5f9;
       padding: 16px;
@@ -117,7 +116,6 @@
       font-family: inherit;
       background-color: #ffffff;
     }
-    /* ★追加：保存ボタンと使い方ボタンを横並びにするレイアウト★ */
     .settings-actions {
       display: flex;
       align-items: center;
@@ -373,7 +371,6 @@
       color: #475569;
     }
     
-    /* モーダル（ポップアップ）のデザイン */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -396,12 +393,12 @@
       text-align: center;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
     }
+    /* ★修正：ここで pre-wrap を外して通常通りにします */
     .modal-message {
       font-size: 14px;
       font-weight: 500;
       color: #334155;
       margin-bottom: 20px;
-      white-space: pre-wrap;
       line-height: 1.6;
     }
     .modal-close-btn {
@@ -533,15 +530,19 @@
     let globalTaxMultiplier = 1.0;
     let globalTargetTotal = 0;
 
-    // 通常のテキストメッセージ用モーダル
+    // ★修正：通常のテキスト用は改行(pre-wrap)をJavaScript側で設定する
     function showModal(message) {
-      document.getElementById('modalMessage').textContent = message;
+      const msgEl = document.getElementById('modalMessage');
+      msgEl.style.whiteSpace = 'pre-wrap';
+      msgEl.textContent = message;
       document.getElementById('customModal').style.display = 'flex';
     }
 
-    // ★追加：HTMLタグ（リンクや太字など）を有効にした使い方ガイド用モーダル★
+    // ★修正：ガイド（HTML）用は空白を無視(normal)して綺麗に詰める
     function showHtmlModal(htmlContent) {
-      document.getElementById('modalMessage').innerHTML = htmlContent;
+      const msgEl = document.getElementById('modalMessage');
+      msgEl.style.whiteSpace = 'normal';
+      msgEl.innerHTML = htmlContent;
       document.getElementById('customModal').style.display = 'flex';
     }
 
@@ -549,22 +550,22 @@
       document.getElementById('customModal').style.display = 'none';
     }
 
-    // ★追加：ガイドボタンを押した時の処理★
+    // ★修正：ガイドのHTMLをさらに美しく調整しました
     function showGuideModal() {
       const guideHtml = `
-        <h3 style="margin-top: 0; color: #0f172a; font-size: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px;">APIキーの取得・設定方法</h3>
-        <div style="text-align: left; font-size: 13.5px; color: #475569; line-height: 1.6;">
-          <ol style="padding-left: 20px; margin-bottom: 0;">
-            <li style="margin-bottom: 12px;">
+        <div style="text-align: left;">
+          <h3 style="margin-top: 0; color: #0f172a; font-size: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px; text-align: center;">APIキーの取得・設定方法</h3>
+          <ol style="padding-left: 24px; margin: 0; color: #475569; font-size: 14px; line-height: 1.6;">
+            <li style="margin-bottom: 12px; padding-left: 4px;">
               <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: none; font-weight: bold;">Google AI Studio <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">open_in_new</span></a> にアクセスします。
             </li>
-            <li style="margin-bottom: 12px;">
+            <li style="margin-bottom: 12px; padding-left: 4px;">
               Googleアカウントでログインし、画面にある<strong>「Create API key」</strong>という青いボタンを押します。
             </li>
-            <li style="margin-bottom: 12px;">
+            <li style="margin-bottom: 12px; padding-left: 4px;">
               生成された <strong>AQ.</strong> などの英数字の羅列（キー）をコピーします。
             </li>
-            <li>
+            <li style="padding-left: 4px;">
               この画面の入力欄に貼り付けて「保存」を押せば、準備完了です！
             </li>
           </ol>
@@ -586,7 +587,7 @@
         localStorage.setItem('geminiApiKey', key); 
         const status = document.getElementById('apiKeyStatus');
         status.style.display = 'inline';
-        setTimeout(() => status.style.display = 'none', 3000); // 消えるまでの時間を3秒に延長
+        setTimeout(() => status.style.display = 'none', 3000);
       } else {
         showModal("APIキーを入力してください。");
       }
