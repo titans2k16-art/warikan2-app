@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>スマドリ許すまじ</title>
+  <title>居酒屋割り勘アプリ</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     body {
@@ -58,7 +58,6 @@
       font-weight: bold;
     }
     
-    /* 設定エリア */
     .settings-area {
       background-color: #e9ecef;
       padding: 12px;
@@ -92,13 +91,15 @@
       margin-bottom: 6px;
       font-size: 14px;
     }
+    /* 結果画面の傾斜設定用セレクトボックス */
     .weight-select {
       padding: 4px 6px;
       border-radius: 4px;
       border: 1px solid #ccc;
       font-size: 12px;
       background-color: #fff;
-      margin-right: 8px;
+      margin-top: 6px;
+      width: 100%;
     }
     .delete-btn {
       color: #ff4d4f;
@@ -179,9 +180,16 @@
       font-size: 16px;
       font-weight: bold;
       margin-top: 16px;
+      cursor: pointer;
     }
     .btn-secondary {
       background-color: #6c757d;
+      margin-top: 0;
+    }
+    .btn-half {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
       margin-top: 0;
     }
     .btn-screenshot {
@@ -231,12 +239,27 @@
       text-align: center;
       color: #d9534f;
     }
+    /* 税金設定のボタンスタイル */
+    .tax-setting {
+      display: flex;
+      justify-content: space-between;
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      margin-bottom: 16px;
+    }
+    .tax-setting label {
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
   <div class="container" id="appContainer">
-    <h1>🫗反スマドリ 🫗</h1>
+    <h1>🍻 居酒屋割り勘アプリ</h1>
 
     <div class="settings-area">
       <label for="apiKeyInput"><strong>⚙️ Gemini APIキー</strong> (初回のみ入力)</label>
@@ -246,7 +269,7 @@
     </div>
 
     <div class="section">
-      <div class="section-title">1. メンバー登録 ＆ 傾斜設定</div>
+      <div class="section-title">1. メンバー登録</div>
       <div class="input-group">
         <input type="text" id="memberName" placeholder="名前（例：山田）">
         <button onclick="addMember()">追加</button>
@@ -257,8 +280,13 @@
     <div class="section">
       <div class="section-title">2. レシート仕分け</div>
       
-      <input type="file" id="cameraInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-      <button class="btn btn-secondary" onclick="triggerCameraClick()" style="margin-bottom: 12px;">📸 レシート撮影・スクショを選択</button>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(event)">
+      <input type="file" id="galleryInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+      
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <button class="btn btn-secondary btn-half" onclick="triggerCamera()">📸 カメラ起動</button>
+        <button class="btn btn-secondary btn-half" onclick="triggerGallery()">📁 アルバム選択</button>
+      </div>
       
       <div id="imagePreviewArea">
         <img id="receiptImagePreview" src="" alt="レシートプレビュー">
@@ -269,10 +297,18 @@
       <div id="receiptItemsArea"></div>
     </div>
 
+    <div class="section-title">3. 計算設定</div>
+    <div class="tax-setting">
+      <label><input type="radio" name="taxType" value="inner" checked> 🔘 内税（そのまま）</label>
+      <label><input type="radio" name="taxType" value="outer"> ⚪️ 外税（＋10%）</label>
+    </div>
+
     <button class="btn" onclick="calculate()">💰 割り勘を計算する</button>
 
     <div id="resultArea">
       <h2 style="font-size: 18px; margin-top: 0; color: #ff6b6b; text-align: center;">お会計結果</h2>
+      <div style="font-size: 12px; color: #666; text-align: center; margin-bottom: 12px;">💡 ここで「ごはん代」の比率を調整できます</div>
+      
       <ul class="member-list" id="resultList"></ul>
       <div id="resultSummary" class="result-summary"></div>
       <button class="btn btn-screenshot" onclick="takeScreenshot()">📸 画面をスクショ保存する</button>
@@ -283,7 +319,10 @@
     let members = [];
     let receiptItems = [];
 
-    // 画面起動時にLocalStorageからAPIキーを読み込む
+    // 計算後に使う一時保存用の変数
+    let globalSharedFood = 0;
+    let globalDrinks = [];
+
     window.onload = function() {
       const savedKey = localStorage.getItem('geminiApiKey');
       if (savedKey) {
@@ -313,21 +352,27 @@
       }
     }
 
-    function changeWeight(index, value) {
-      members[index].weight = parseFloat(value);
-    }
-
     function deleteMember(index) {
       members.splice(index, 1);
       updateUI();
     }
 
-    function triggerCameraClick() {
+    // カメラ起動用
+    function triggerCamera() {
       if (members.length === 0) {
-        alert("🚨 メンバーが1人も登録されていません！\n\nレシートを読み込む前に、まずは一番上の『1. メンバー登録』から名前を追加してください。");
+        alert("🚨 メンバーが登録されていません！");
         return;
       }
       document.getElementById('cameraInput').click();
+    }
+
+    // アルバム起動用
+    function triggerGallery() {
+      if (members.length === 0) {
+        alert("🚨 メンバーが登録されていません！");
+        return;
+      }
+      document.getElementById('galleryInput').click();
     }
 
     async function handleImageUpload(event) {
@@ -346,7 +391,6 @@
         const base64Image = e.target.result;
         document.getElementById('receiptImagePreview').src = base64Image;
         document.getElementById('imagePreviewArea').style.display = 'block';
-        
         document.getElementById('loadingMessage').style.display = 'block';
         document.getElementById('receiptItemsArea').innerHTML = ""; 
         
@@ -356,10 +400,8 @@
       reader.readAsDataURL(file);
     }
 
-    // --- ★AI（Gemini 2.5 Flash）と直接通信する処理★ ---
     async function analyzeReceiptWithGemini(base64Data, apiKey) {
       const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-      
       const promptText = `
         このレシート画像から、品名と金額を読み取ってください。
         出力は必ず以下のJSON形式の配列「のみ」とし、マークダウン（\`\`\`json など）やその他の文章は一切含めないでください。
@@ -368,12 +410,7 @@
       `;
 
       const requestBody = {
-        contents: [{
-          parts: [
-            { text: promptText },
-            { inlineData: { mimeType: "image/jpeg", data: base64Data } }
-          ]
-        }]
+        contents: [{ parts: [ { text: promptText }, { inlineData: { mimeType: "image/jpeg", data: base64Data } } ] }]
       };
 
       try {
@@ -383,29 +420,21 @@
           body: JSON.stringify(requestBody)
         });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const errorMessage = errorData.error ? errorData.error.message : response.statusText;
-          throw new Error(`エラーコード: ${response.status}\n理由: ${errorMessage}`);
-        }
+        if (!response.ok) throw new Error(`通信エラー: ${response.status}`);
 
         const data = await response.json();
         let aiResponseText = data.candidates[0].content.parts[0].text;
-        
         aiResponseText = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
 
         const extractedItems = JSON.parse(aiResponseText);
-        
         receiptItems = extractedItems.map(item => ({
           name: item.name,
           price: parseInt(item.price, 10),
           assignType: "all",
           customAssign: {}
         }));
-
       } catch (error) {
-        console.error(error);
-        alert("画像の読み取りに失敗しました。\n\n【エラー詳細】\n" + error.message);
+        alert("画像の読み取りに失敗しました。");
       } finally {
         document.getElementById('loadingMessage').style.display = 'none';
         updateUI();
@@ -416,17 +445,12 @@
       let item = receiptItems[itemIndex];
       let currentQty = item.customAssign[memberIndex] || 0;
       let newQty = currentQty + delta;
-      
       if (newQty < 0) newQty = 0;
       
       item.customAssign[memberIndex] = newQty;
       
       let totalCustomQty = Object.values(item.customAssign).reduce((sum, val) => sum + val, 0);
-      if (totalCustomQty > 0) {
-        item.assignType = "custom";
-      } else {
-        item.assignType = "all";
-      }
+      item.assignType = (totalCustomQty > 0) ? "custom" : "all";
       updateUI();
     }
 
@@ -437,28 +461,15 @@
     }
 
     function updateUI() {
+      // 傾斜設定は結果画面に移動したため、メンバーリストはシンプルに表示
       const memberList = document.getElementById('memberList');
       memberList.innerHTML = "";
       members.forEach((m, index) => {
-        memberList.innerHTML += `
-          <li>
-            <span>👤 ${m.name}</span>
-            <div>
-              <select class="weight-select" onchange="changeWeight(${index}, this.value)">
-                <option value="1.0" ${m.weight === 1.0 ? 'selected' : ''}>通常 (1.0)</option>
-                <option value="1.5" ${m.weight === 1.5 ? 'selected' : ''}>多め (1.5)</option>
-                <option value="2.0" ${m.weight === 2.0 ? 'selected' : ''}>上司/主役 (2.0)</option>
-                <option value="0.5" ${m.weight === 0.5 ? 'selected' : ''}>少なめ (0.5)</option>
-                <option value="0.0" ${m.weight === 0.0 ? 'selected' : ''}>ご馳走(0.0)</option>
-              </select>
-              <button class="delete-btn" onclick="deleteMember(${index})">×</button>
-            </div>
-          </li>`;
+        memberList.innerHTML += `<li><span>👤 ${m.name}</span><button class="delete-btn" onclick="deleteMember(${index})">×</button></li>`;
       });
 
       const receiptArea = document.getElementById('receiptItemsArea');
       receiptArea.innerHTML = "";
-      
       receiptItems.forEach((item, index) => {
         let isAll = item.assignType === "all";
         let optionsHTML = `
@@ -467,11 +478,9 @@
             ${isAll ? '<span>✅</span>' : ''}
           </div>
         `;
-        
         members.forEach((m, memberIdx) => {
           let qty = item.customAssign[memberIdx] || 0;
           let isCustom = (!isAll && qty > 0);
-          
           optionsHTML += `
             <div class="assign-row ${isCustom ? 'active' : ''}">
               <span>🍺 ${m.name}</span>
@@ -483,33 +492,27 @@
             </div>
           `;
         });
-
-        receiptArea.innerHTML += `
-          <div class="receipt-item">
-            <div class="receipt-item-header">
-              <span>${item.name}</span>
-              <span>${item.price} 円</span>
-            </div>
-            <div class="assign-area">
-              ${optionsHTML}
-            </div>
-          </div>
-        `;
+        receiptArea.innerHTML += `<div class="receipt-item"><div class="receipt-item-header"><span>${item.name}</span><span>${item.price} 円</span></div><div class="assign-area">${optionsHTML}</div></div>`;
       });
     }
 
+    // --- ★1. ボタン押下時の集計処理（税金の加算）★ ---
     function calculate() {
       if (members.length === 0 || receiptItems.length === 0) {
-        alert("メンバーの追加とレシートの読み込みを行ってください。");
+        alert("レシートを読み込んで仕分けを行ってください。");
         return;
       }
 
-      let sharedFoodTotal = 0;
-      let results = members.map(m => ({ name: m.name, foodAmount: 0, drinkTotal: 0, totalAmount: 0 }));
+      // 税金の設定を読み取る（外税なら1.1倍）
+      let isOuterTax = document.querySelector('input[name="taxType"]:checked').value === "outer";
+      let taxMultiplier = isOuterTax ? 1.1 : 1.0;
+
+      let sharedFoodBase = 0;
+      let drinksBase = members.map(() => 0);
 
       receiptItems.forEach(item => {
         if (item.assignType === "all") {
-          sharedFoodTotal += item.price;
+          sharedFoodBase += item.price;
         } else {
           let totalQty = Object.values(item.customAssign).reduce((sum, val) => sum + val, 0);
           if (totalQty > 0) {
@@ -518,48 +521,68 @@
               if (qty > 0) {
                 let memberIndex = parseInt(memberIdxStr, 10);
                 let portionPrice = Math.ceil(item.price * (qty / totalQty));
-                results[memberIndex].drinkTotal += portionPrice;
+                drinksBase[memberIndex] += portionPrice;
               }
             }
           } else {
-            sharedFoodTotal += item.price;
+            sharedFoodBase += item.price;
           }
         }
       });
 
-      let totalWeight = members.reduce((sum, m) => sum + m.weight, 0);
+      // 税金を適用した合計金額をグローバル変数に保存（結果画面で使い回すため）
+      globalSharedFood = Math.ceil(sharedFoodBase * taxMultiplier);
+      globalDrinks = drinksBase.map(d => Math.ceil(d * taxMultiplier));
 
-      results.forEach((res, index) => {
-        let userWeight = members[index].weight;
-        let foodPortion = 0;
-        if (totalWeight > 0 && userWeight > 0) {
-          foodPortion = Math.ceil(sharedFoodTotal * (userWeight / totalWeight));
-        }
-        res.foodAmount = foodPortion;
-      });
-
+      // 結果の描画を呼び出す
+      renderResults();
+      
       const resultArea = document.getElementById('resultArea');
+      resultArea.style.display = "block";
+      resultArea.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // --- ★2. 結果画面の描画処理（リアルタイム再計算）★ ---
+    function updateResultWeight(index, value) {
+      members[index].weight = parseFloat(value);
+      renderResults(); // 傾斜が変わったらここだけやり直す
+    }
+
+    function renderResults() {
       const resultList = document.getElementById('resultList');
       const resultSummary = document.getElementById('resultSummary');
-      
       resultList.innerHTML = "";
+      
+      let totalWeight = members.reduce((sum, m) => sum + m.weight, 0);
       let finalGrandTotal = 0;
 
-      results.forEach(res => {
-        res.totalAmount = res.foodAmount + res.drinkTotal;
-        finalGrandTotal += res.totalAmount;
+      members.forEach((m, index) => {
+        let foodPortion = 0;
+        if (totalWeight > 0 && m.weight > 0) {
+          foodPortion = Math.ceil(globalSharedFood * (m.weight / totalWeight));
+        }
+        
+        let drinkTotal = globalDrinks[index];
+        let personTotal = foodPortion + drinkTotal;
+        finalGrandTotal += personTotal;
 
+        // 結果リストの中に「傾斜ドロップダウン」を埋め込む
         resultList.innerHTML += `
-          <li style="flex-direction: column; align-items: flex-start;">
-            <div class="result-item">${res.name}： ${res.totalAmount.toLocaleString()} 円</div>
-            <div class="result-detail">（内訳: ごはん ${res.foodAmount.toLocaleString()}円 ＋ 個別 ${res.drinkTotal.toLocaleString()}円）</div>
+          <li style="flex-direction: column; align-items: flex-start; background-color: #fff; border: 1px solid #ddd;">
+            <div class="result-item">${m.name}： ${personTotal.toLocaleString()} 円</div>
+            <div class="result-detail" style="margin-bottom: 8px;">（内訳: ごはん ${foodPortion.toLocaleString()}円 ＋ 個別 ${drinkTotal.toLocaleString()}円）</div>
+            <select class="weight-select" onchange="updateResultWeight(${index}, this.value)">
+              <option value="1.0" ${m.weight === 1.0 ? 'selected' : ''}>通常 (1.0)</option>
+              <option value="1.5" ${m.weight === 1.5 ? 'selected' : ''}>多め (1.5)</option>
+              <option value="2.0" ${m.weight === 2.0 ? 'selected' : ''}>上司/主役 (2.0)</option>
+              <option value="0.5" ${m.weight === 0.5 ? 'selected' : ''}>少なめ (0.5)</option>
+              <option value="0.0" ${m.weight === 0.0 ? 'selected' : ''}>ご馳走 (0.0)</option>
+            </select>
           </li>
         `;
       });
 
       resultSummary.innerHTML = `💰 割り勘総合計: ${finalGrandTotal.toLocaleString()} 円`;
-      resultArea.style.display = "block";
-      resultArea.scrollIntoView({ behavior: 'smooth' });
     }
 
     function takeScreenshot() {
@@ -568,9 +591,7 @@
       screenshotBtn.style.visibility = 'hidden';
 
       html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff"
+        scale: 2, useCORS: true, backgroundColor: "#ffffff"
       }).then(canvas => {
         const link = document.createElement('a');
         link.download = '割り勘お会計結果.png';
@@ -578,8 +599,7 @@
         link.click();
         screenshotBtn.style.visibility = 'visible';
       }).catch(error => {
-        console.error(error);
-        alert("スクショの保存に失敗しました。スマホ自体のスクショ機能をお使いください。");
+        alert("スクショの保存に失敗しました。");
         screenshotBtn.style.visibility = 'visible';
       });
     }
